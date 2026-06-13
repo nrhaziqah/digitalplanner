@@ -228,6 +228,48 @@ body{font-family:var(--font);background:var(--bg3);color:var(--tx);min-height:10
 .add-btn:hover{background:var(--bg2)}
 
 
+
+/* SUPABASE SYNC */
+.auth-card{
+  background:var(--bg);
+  border:0.5px solid var(--bd);
+  border-radius:var(--rl);
+  padding:14px;
+  margin-bottom:18px;
+}
+.auth-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.auth-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;color:var(--tx)}
+.auth-copy{font-size:12px;color:var(--tx3);margin-top:3px;line-height:1.45}
+.auth-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.auth-row input{
+  flex:1;
+  min-width:180px;
+  font-size:13px;
+  padding:8px 10px;
+  border:0.5px solid var(--bd2);
+  border-radius:var(--r);
+  background:var(--bg2);
+  color:var(--tx);
+  font-family:var(--font);
+  outline:none;
+}
+.auth-row input:focus{border-color:var(--acc)}
+.sync-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:11px;
+  border-radius:999px;
+  padding:4px 8px;
+  background:var(--acc-l);
+  color:var(--acc-d);
+  border:0.5px solid var(--bd);
+}
+.sync-pill.offline{background:var(--bg2);color:var(--tx3)}
+.sync-pill.error{background:var(--coral-l);color:var(--coral-d)}
+.auth-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+@media(max-width:560px){.auth-row input{min-width:100%}.auth-actions .tool-btn{flex:1;justify-content:center}}
+
 /* SINGLE PAGE LAYOUT */
 .page-section{margin-top:20px;scroll-margin-top:96px}
 .page-section:first-of-type{margin-top:0}
@@ -262,6 +304,10 @@ body{font-family:var(--font);background:var(--bg3);color:var(--tx);min-height:10
       <div class="greeting-quote" id="daily-quote"></div>
     </div>
     <div class="greeting-icon"><i class="ti ti-sparkles"></i></div>
+  </section>
+
+  <section id="auth-section" class="auth-card" aria-label="Supabase sync">
+    <div id="auth-area"></div>
   </section>
 
   <section id="today-section" class="page-section">
@@ -331,6 +377,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--tx);min-height:10
 </div>
 <div id="modal-root"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -433,13 +480,161 @@ let monthCursor=new Date(today);
 let weekCursor=new Date(today);
 let selectedDate=new Date(today);
 
+// ── SUPABASE CLOUD SYNC ──────────────────────────────
+// This uses the publishable/anon key only. Never paste a Supabase service_role key in this file.
+const SUPABASE_URL='https://rmjfuboyotjeraxrikif.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_Vky1aAI1BjXAWm2IgOMPhg_V8FxrVoo';
+const supabaseClient=(window.supabase&&SUPABASE_URL&&SUPABASE_PUBLISHABLE_KEY)
+  ? window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY)
+  : null;
+
+let authUser=null;
+let cloudLoaded=false;
+let cloudSaving=false;
+let cloudSaveTimer=null;
+let cloudStatus='Not signed in. Data is saved on this browser only.';
+let lastCloudSaveAt='';
+
+function hasLocalPlannerData(){return Object.keys(data||{}).length>0 || (importantDates||[]).length>0}
+function setLocalPlannerData(nextData,nextImportant){
+  data=nextData||{};
+  importantDates=nextImportant||[];
+  localStorage.setItem('planner_data',JSON.stringify(data));
+  localStorage.setItem('planner_important',JSON.stringify(importantDates));
+  migrateAll();
+}
+function scheduleCloudSave(){
+  if(!supabaseClient||!authUser)return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer=setTimeout(()=>savePlannerToCloud(),800);
+}
+async function savePlannerToCloud(){
+  if(!supabaseClient||!authUser)return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaving=true;cloudStatus='Syncing…';renderAuth();
+  const payload={
+    user_id:authUser.id,
+    planner_data:data||{},
+    important_dates:importantDates||[],
+    updated_at:new Date().toISOString()
+  };
+  const {error}=await supabaseClient.from('planner_sync').upsert(payload,{onConflict:'user_id'});
+  cloudSaving=false;
+  if(error){cloudStatus='Sync error: '+error.message;renderAuth();return}
+  lastCloudSaveAt=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  cloudStatus='Synced at '+lastCloudSaveAt;
+  renderAuth();
+}
+async function loadPlannerFromCloud(){
+  if(!supabaseClient||!authUser)return;
+  cloudStatus='Loading cloud planner…';renderAuth();
+  const {data:rows,error}=await supabaseClient
+    .from('planner_sync')
+    .select('planner_data,important_dates,updated_at')
+    .eq('user_id',authUser.id)
+    .limit(1);
+  if(error){cloudStatus='Load error: '+error.message;renderAuth();return}
+  const row=rows&&rows[0];
+  if(row){
+    setLocalPlannerData(row.planner_data||{},row.important_dates||[]);
+    cloudLoaded=true;
+    lastCloudSaveAt=row.updated_at?new Date(row.updated_at).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}):'';
+    cloudStatus=lastCloudSaveAt?'Loaded cloud data from '+lastCloudSaveAt:'Cloud data loaded';
+  }else{
+    cloudLoaded=true;
+    cloudStatus=hasLocalPlannerData()?'No cloud data yet. Uploading this browser’s planner…':'No cloud data yet. Add something to start syncing.';
+    if(hasLocalPlannerData()) await savePlannerToCloud();
+  }
+  render();
+}
+async function initSupabaseAuth(){
+  if(!supabaseClient){cloudStatus='Supabase client could not load. Data is saved on this browser only.';render();return}
+  const {data:sessionData}=await supabaseClient.auth.getSession();
+  authUser=sessionData.session?.user||null;
+  if(authUser) await loadPlannerFromCloud();
+  render();
+  supabaseClient.auth.onAuthStateChange(async(event,session)=>{
+    const nextUser=session?.user||null;
+    const changed=nextUser?.id!==authUser?.id;
+    authUser=nextUser;
+    if(authUser&&changed){cloudLoaded=false;await loadPlannerFromCloud()}
+    if(!authUser){cloudLoaded=false;cloudStatus='Signed out. Data is saved on this browser only.';render()}
+  });
+}
+function getAuthFields(){
+  return {
+    email:document.getElementById('auth-email')?.value.trim()||'',
+    password:document.getElementById('auth-password')?.value||''
+  };
+}
+async function signUpPlanner(){
+  if(!supabaseClient)return alert('Supabase is not available.');
+  const {email,password}=getAuthFields();
+  if(!email||!password)return alert('Enter your email and password first.');
+  const {error}=await supabaseClient.auth.signUp({email,password,options:{emailRedirectTo:window.location.href}});
+  if(error)return alert(error.message);
+  alert('Account created. If Supabase asks for email confirmation, check your inbox before logging in.');
+}
+async function signInPlanner(){
+  if(!supabaseClient)return alert('Supabase is not available.');
+  const {email,password}=getAuthFields();
+  if(!email||!password)return alert('Enter your email and password first.');
+  const {error}=await supabaseClient.auth.signInWithPassword({email,password});
+  if(error)return alert(error.message);
+  cloudStatus='Signed in. Loading your planner…';
+}
+async function signOutPlanner(){
+  if(!supabaseClient)return;
+  await supabaseClient.auth.signOut();
+}
+async function forceCloudSync(){
+  await savePlannerToCloud();
+}
+function renderAuth(){
+  const el=document.getElementById('auth-area');
+  if(!el)return;
+  const hasError=cloudStatus.toLowerCase().includes('error');
+  const pillClass=authUser?(hasError?'sync-pill error':'sync-pill'):'sync-pill offline';
+  if(authUser){
+    el.innerHTML=`
+      <div class="auth-head">
+        <div>
+          <div class="auth-title"><i class="ti ti-cloud-check"></i> Cloud sync is on</div>
+          <div class="auth-copy">Signed in as ${escHtml(authUser.email||'your account')}. Your planner syncs through Supabase so it can load on other devices after you sign in.</div>
+        </div>
+        <span class="${pillClass}"><i class="ti ${cloudSaving?'ti-loader':'ti-cloud'}"></i> ${escHtml(cloudStatus)}</span>
+      </div>
+      <div class="auth-actions">
+        <button class="tool-btn" onclick="forceCloudSync()"><i class="ti ti-refresh"></i> Sync now</button>
+        <button class="tool-btn" onclick="signOutPlanner()"><i class="ti ti-logout"></i> Log out</button>
+      </div>`;
+  }else{
+    el.innerHTML=`
+      <div class="auth-head">
+        <div>
+          <div class="auth-title"><i class="ti ti-cloud"></i> Cloud sync</div>
+          <div class="auth-copy">Log in to sync this planner across your laptop and phone. Without login, it still saves locally in this browser.</div>
+        </div>
+        <span class="${pillClass}"><i class="ti ti-device-laptop"></i> ${escHtml(cloudStatus)}</span>
+      </div>
+      <div class="auth-row">
+        <input id="auth-email" type="email" placeholder="Email address" autocomplete="email">
+        <input id="auth-password" type="password" placeholder="Password" autocomplete="current-password">
+      </div>
+      <div class="auth-actions">
+        <button class="tool-btn" onclick="signInPlanner()"><i class="ti ti-login"></i> Log in</button>
+        <button class="tool-btn" onclick="signUpPlanner()"><i class="ti ti-user-plus"></i> Sign up</button>
+      </div>`;
+  }
+}
+
 function loadJSON(keyName,fallback){
   try{return JSON.parse(localStorage.getItem(keyName)||JSON.stringify(fallback))}catch{return fallback}
 }
 function loadData(){return loadJSON('planner_data',{})}
-function saveData(){localStorage.setItem('planner_data',JSON.stringify(data))}
+function saveData(){localStorage.setItem('planner_data',JSON.stringify(data));scheduleCloudSave()}
 function loadImportant(){return loadJSON('planner_important',[])}
-function saveImportantData(){localStorage.setItem('planner_important',JSON.stringify(importantDates))}
+function saveImportantData(){localStorage.setItem('planner_important',JSON.stringify(importantDates));scheduleCloudSave()}
 let data=loadData();
 let importantDates=loadImportant();
 
@@ -589,6 +784,7 @@ function navigateDay(dir){selectedDate.setDate(selectedDate.getDate()+dir);month
 function goToday(){selectedDate=new Date(today);monthCursor=new Date(today);weekCursor=new Date(today);render();scrollToSection('today-section')}
 function render(){
   renderGreeting();
+  renderAuth();
   renderDashboard(document.getElementById('dashboard-area'));
   renderMonthly(document.getElementById('month-area'));
   renderWeekly(document.getElementById('week-area'));
@@ -1112,11 +1308,12 @@ function importPlanner(event){
   event.target.value='';
 }
 function clearPlannerData(){
-  if(!confirm('This will permanently clear all planner data in this browser. Continue?'))return;
+  if(!confirm('This will permanently clear all planner data in this browser and sync the empty planner to cloud if you are signed in. Continue?'))return;
   data={};importantDates=[];saveData();saveImportantData();render();
 }
 
 render();
+initSupabaseAuth();
 setInterval(renderGreeting,60000);
 </script>
 </body>

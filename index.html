@@ -198,9 +198,18 @@ body{font-family:var(--font);background:var(--bg3);color:var(--tx);min-height:10
 .form-row input,.form-row select,.form-row textarea{width:100%;font-size:13px;padding:7px 9px;border:0.5px solid var(--bd2);border-radius:var(--r);background:var(--bg2);color:var(--tx);font-family:var(--font);outline:none}
 .form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:var(--acc)}
 .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-.color-picker{display:flex;gap:6px;flex-wrap:wrap}
+.color-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .color-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .1s}
 .color-swatch.selected{border-color:var(--tx);transform:scale(1.15)}
+.color-choice{display:flex;align-items:center;gap:7px;border:0.5px solid var(--bd);border-radius:var(--r);background:var(--bg2);padding:7px 8px;cursor:pointer;transition:background .12s,border-color .12s,transform .12s;min-width:0}
+.color-choice:hover{background:var(--bg3);border-color:var(--bd2)}
+.color-choice.selected{background:var(--bg);border-color:var(--acc);box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 16%,transparent)}
+.color-choice-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--bg);box-shadow:0 0 0 0.5px var(--bd2);flex-shrink:0}
+.color-choice-text{min-width:0;line-height:1.15}
+.color-choice-name{font-size:12px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.color-choice-code{font-size:10px;color:var(--tx3);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono',monospace;margin-top:1px}
+.task-color-dot{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;margin-top:1px}
+@media(max-width:520px){.color-picker{grid-template-columns:1fr}}
 .icon-picker{display:flex;gap:6px;flex-wrap:wrap;max-height:100px;overflow-y:auto}
 .icon-opt{width:28px;height:28px;border-radius:6px;cursor:pointer;border:0.5px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:15px;transition:background .1s}
 .icon-opt:hover,.icon-opt.selected{background:var(--acc-l);border-color:var(--acc);color:var(--acc-d)}
@@ -395,6 +404,7 @@ const APPT_COLORS=[
   {name:'Slate',bg:'#E8EDF2',text:'#334155',dot:'#64748B'},
 ];
 const DATE_COLORS=APPT_COLORS;
+const TASK_COLORS=APPT_COLORS;
 const ICONS_APPT=['ti-calendar-event','ti-clock','ti-stethoscope','ti-barbell','ti-briefcase','ti-users','ti-home','ti-plane','ti-coffee','ti-book','ti-music','ti-heart','ti-star','ti-phone','ti-video','ti-school','ti-baby-carriage','ti-car','ti-shopping-cart','ti-tool'];
 const ICONS_DATE=['ti-cake','ti-heart','ti-gift','ti-star','ti-school','ti-flag','ti-beach','ti-confetti','ti-calendar-heart','ti-award','ti-sun','ti-moon','ti-flower','ti-home','ti-plane','ti-users','ti-baby-carriage','ti-music','ti-camera','ti-bookmark'];
 const PRIORITY_LABELS={high:'High',medium:'Medium',low:'Low'};
@@ -658,6 +668,7 @@ function normaliseTask(t){
     doneDates:t?.doneDates||{},
     priority:t?.priority||'medium',
     deadline:t?.deadline||'',
+    color:t?.color??0,
     recurrence:normaliseRecurrence(t?.recurrence,'none'),
     category:CATEGORIES.includes(t?.category)?t.category:'Other'
   };
@@ -896,8 +907,8 @@ function getMonthlyPreviewItems(d,tasks,appts,imps){
     items.push({type:'important',importantIndex:o.index,text:id.title,meta:id.category||'Important date',icon:id.icon||'ti-star',bg:c.bg,color:c.text});
   });
   tasks.forEach(o=>{
-    const t=o.item,done=isTaskDone(t,o.occurrenceDk);
-    items.push({type:'task',originDk:o.originDk,index:o.index,occurrenceDk:o.occurrenceDk,text:t.text,meta:`${PRIORITY_LABELS[t.priority||'medium']} priority${t.deadline?' · '+(fmtDeadline(t.deadline)?.label||''):''}`,icon:done?'ti-check':'ti-checks',bg:'var(--acc-l)',color:'var(--acc-d)',done});
+    const t=o.item,done=isTaskDone(t,o.occurrenceDk),c=TASK_COLORS[t.color??0]||TASK_COLORS[0];
+    items.push({type:'task',originDk:o.originDk,index:o.index,occurrenceDk:o.occurrenceDk,text:t.text,meta:`${PRIORITY_LABELS[t.priority||'medium']} priority${t.deadline?' · '+(fmtDeadline(t.deadline)?.label||''):''}`,icon:done?'ti-check':'ti-checks',bg:c.bg,color:c.text,done});
   });
   return items;
 }
@@ -968,8 +979,8 @@ function renderWeeklyAllDayCell(d){
   let html=`<div class="week-all-day-cell" onclick="openDayPreview(${y},${m},${day},event)">`;
   items.slice(0,4).forEach(x=>{
     if(x.kind==='task'){
-      const t=x.item,done=isTaskDone(t,x.occurrenceDk),label=`${PRIORITY_LABELS[t.priority||'medium']}: ${t.text}`;
-      html+=`<div class="week-chip week-task-chip" onclick="event.stopPropagation();openTaskModal('${x.originDk}',${x.index})" title="${escHtml(t.text)}"><i class="ti ${done?'ti-check':'ti-checks'}"></i><span>${escHtml(label)}</span></div>`;
+      const t=x.item,done=isTaskDone(t,x.occurrenceDk),label=`${PRIORITY_LABELS[t.priority||'medium']}: ${t.text}`,c=TASK_COLORS[t.color??0]||TASK_COLORS[0];
+      html+=`<div class="week-chip week-task-chip" onclick="event.stopPropagation();openTaskModal('${x.originDk}',${x.index})" style="background:${c.bg};color:${c.text}" title="${escHtml(t.text)}"><i class="ti ${done?'ti-check':'ti-checks'}"></i><span>${escHtml(label)}</span></div>`;
     }else{
       const id=x.item,c=DATE_COLORS[id.color??2];
       html+=`<div class="week-chip week-important-chip" onclick="event.stopPropagation();openImportantModal(${x.index})" style="background:${c.bg};color:${c.text}" title="${escHtml(id.title)}"><i class="ti ${id.icon||'ti-star'}"></i><span>${escHtml(id.title)}</span></div>`;
@@ -1042,9 +1053,10 @@ function renderDaily(el){
 }
 function renderTaskRows(tasks){
   return tasks.map(o=>{
-    const t=o.item,done=isTaskDone(t,o.occurrenceDk),dl=t.deadline?fmtDeadline(t.deadline):null;
+    const t=o.item,done=isTaskDone(t,o.occurrenceDk),dl=t.deadline?fmtDeadline(t.deadline):null,c=TASK_COLORS[t.color??0]||TASK_COLORS[0];
     return `<div class="item-row" onclick="openTaskModal('${o.originDk}',${o.index})">
       <div class="check${done?' done':''}" onclick="toggleTask('${o.originDk}',${o.index},'${o.occurrenceDk}',event)" role="checkbox" aria-checked="${done}">${done?'<i class="ti ti-check" style="font-size:10px"></i>':''}</div>
+      <div class="task-color-dot" style="background:${c.bg};color:${c.text}" title="${c.name}"><i class="ti ti-tag"></i></div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
           <span class="item-main-text item-text${done?' done':''}">${escHtml(t.text)}</span>
@@ -1149,7 +1161,7 @@ function renderDataTools(el){
 }
 
 function closeModal(){document.getElementById('modal-root').innerHTML=''}
-function colorSwatches(colors,selectedIdx,onclickFn){return colors.map((c,i)=>`<div class="color-swatch${i===selectedIdx?' selected':''}" style="background:${c.dot}" onclick="${onclickFn}(${i})" title="${c.name}"></div>`).join('')}
+function colorSwatches(colors,selectedIdx,onclickFn){return colors.map((c,i)=>`<div class="color-choice${i===selectedIdx?' selected':''}" onclick="${onclickFn}(${i})" title="${c.name} ${c.dot}"><span class="color-choice-dot" style="background:${c.dot}"></span><span class="color-choice-text"><span class="color-choice-name">${c.name}</span><span class="color-choice-code">${c.dot}</span></span></div>`).join('')}
 function iconPicker(icons,selectedIcon,onclickFn){return icons.map(ic=>`<div class="icon-opt${ic===selectedIcon?' selected':''}" onclick="${onclickFn}('${ic}')" title="${ic}"><i class="ti ${ic}"></i></div>`).join('')}
 function hoursOptions(selected){return ALL_HOURS.map(h=>`<option value="${h}"${h===selected?' selected':''}>${fmtHour(h)}</option>`).join('')}
 function categoryOptions(selected){return CATEGORIES.map(c=>`<option value="${c}"${c===selected?' selected':''}>${c}</option>`).join('')}
@@ -1198,11 +1210,11 @@ function saveAppt(){
   saveData();closeModal();render();
 }
 
-let _taskState={originDk:null,index:null};
+let _taskState={originDk:null,index:null,color:0};
 function openTaskModal(dk,index=null){
   const isEdit=index!==null&&index!==undefined;
   const item=isEdit?getDataByKey(dk).tasks[index]:null;
-  _taskState={originDk:dk,index:isEdit?index:null};
+  _taskState={originDk:dk,index:isEdit?index:null,color:item?.color??0};
   const defaultDate=inputDateFromKey(dk);
   document.getElementById('modal-root').innerHTML=`
   <div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
@@ -1217,10 +1229,12 @@ function openTaskModal(dk,index=null){
       <div class="form-row" style="margin:0"><label>Category</label><select id="tm-category">${categoryOptions(item?.category||'Other')}</select></div>
     </div>
     <div class="form-row"><label>Repeat</label><select id="tm-recurrence">${recurrenceOptions(item?.recurrence||'none')}</select></div>
+    <div class="form-row"><label>Colour</label><div class="color-picker" id="tm-colors">${colorSwatches(TASK_COLORS,_taskState.color,'setTaskColor')}</div></div>
     <div class="modal-btns"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveTask()">Save</button></div>
   </div></div>`;
   document.getElementById('tm-title').focus();
 }
+function setTaskColor(i){_taskState.color=i;document.getElementById('tm-colors').innerHTML=colorSwatches(TASK_COLORS,i,'setTaskColor')}
 function saveTask(){
   const title=document.getElementById('tm-title').value.trim();
   if(!title)return;
@@ -1232,7 +1246,7 @@ function saveTask(){
     old=getDataByKey(_taskState.originDk).tasks[_taskState.index]||old;
     getDataByKey(_taskState.originDk).tasks.splice(_taskState.index,1);
   }
-  const task={text:title,done:old.done??false,doneDates:old.doneDates||{},priority:document.getElementById('tm-priority').value,deadline:document.getElementById('tm-deadline').value||'',category:document.getElementById('tm-category').value,recurrence:document.getElementById('tm-recurrence').value};
+  const task={text:title,done:old.done??false,doneDates:old.doneDates||{},priority:document.getElementById('tm-priority').value,deadline:document.getElementById('tm-deadline').value||'',category:document.getElementById('tm-category').value,recurrence:document.getElementById('tm-recurrence').value,color:_taskState.color};
   getDataByKey(targetDk).tasks.push(task);
   saveData();closeModal();render();
 }

@@ -8,28 +8,33 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#fff;--bg2:#f5f4f2;--bg3:#efede8;
-  --tx:#1a1a1a;--tx2:#6b6b6b;--tx3:#9e9e9e;
-  --bd:rgba(0,0,0,0.1);--bd2:rgba(0,0,0,0.2);
-  --acc:#7F77DD;--acc-l:#EEEDFE;--acc-d:#3C3489;
-  --grn:#1D9E75;--grn-l:#E1F5EE;--grn-d:#085041;
+  /* Calm productivity palette: dusty blue + sage green */
+  --bg:#FFFFFF;--bg2:#F4F7FA;--bg3:#EEF3F7;
+  --tx:#1F2933;--tx2:#6B7280;--tx3:#9AA6B2;
+  --bd:rgba(31,41,51,0.10);--bd2:rgba(31,41,51,0.18);
+  --acc:#6F8FAF;--acc-l:#E7EEF6;--acc-d:#2F536F;
+  --grn:#7A9E7E;--grn-l:#E7F0E6;--grn-d:#355C3A;
+  --amber:#BFA36A;--amber-l:#F3EAD6;--amber-d:#6A5525;
+  --coral:#C97C6D;--coral-l:#F4E3DF;--coral-d:#7B3F36;
   --r:8px;--rl:12px;
   --font:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 @media(prefers-color-scheme:dark){
   :root{
-    --bg:#1c1c1c;--bg2:#272727;--bg3:#2e2e2e;
-    --tx:#f0f0f0;--tx2:#aaa;--tx3:#777;
-    --bd:rgba(255,255,255,0.1);--bd2:rgba(255,255,255,0.2);
-    --acc-l:#2a2860;--acc-d:#b8b3f5;
-    --grn-l:#0d3327;--grn-d:#7ed8b8;
+    --bg:#161B22;--bg2:#1F2933;--bg3:#111827;
+    --tx:#F3F4F6;--tx2:#B6C0CC;--tx3:#7F8A99;
+    --bd:rgba(255,255,255,0.10);--bd2:rgba(255,255,255,0.18);
+    --acc:#8FB0CE;--acc-l:#223448;--acc-d:#C7DCEF;
+    --grn:#93B596;--grn-l:#1F3325;--grn-d:#C5DFC7;
+    --amber:#D6BE82;--amber-l:#3B3120;--amber-d:#F3DFA7;
+    --coral:#D99A8F;--coral-l:#3D2420;--coral-d:#F0C1B9;
   }
 }
-body{font-family:var(--font);background:var(--bg3);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem 1rem}
-.planner{background:var(--bg);border-radius:var(--rl);border:0.5px solid var(--bd);padding:1.5rem;width:100%;max-width:860px}
+body{font-family:var(--font);background:var(--bg3);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:1rem;scroll-behavior:smooth}
+.planner{background:var(--bg);border-radius:var(--rl);border:0.5px solid var(--bd);padding:1.5rem;width:100%;max-width:980px}
 
 /* NAV */
-.nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px}
+.nav{position:sticky;top:10px;z-index:60;display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);border:0.5px solid var(--bd);border-radius:var(--rl);padding:8px}
 .tabs{display:flex;gap:4px;background:var(--bg2);border-radius:var(--r);padding:3px;flex-wrap:wrap}
 .tab{padding:5px 13px;border:none;background:none;border-radius:6px;font-size:13px;cursor:pointer;color:var(--tx2);font-family:var(--font);transition:background .15s}
 .tab.active{background:var(--bg);color:var(--tx);font-weight:500;border:0.5px solid var(--bd)}
@@ -37,6 +42,74 @@ body{font-family:var(--font);background:var(--bg3);color:var(--tx);min-height:10
 .nav-center h2{font-size:16px;font-weight:500;min-width:180px;text-align:center}
 .btn-icon{background:none;border:0.5px solid var(--bd);border-radius:var(--r);width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:16px;transition:background .15s}
 .btn-icon:hover{background:var(--bg2)}
+
+
+/* GREETING HERO */
+.greeting-card{
+  background:linear-gradient(135deg,var(--acc-l),var(--bg));
+  border:0.5px solid var(--bd);
+  border-radius:var(--rl);
+  padding:18px;
+  margin-bottom:18px;
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  align-items:flex-start;
+  overflow:hidden;
+  position:relative;
+}
+.greeting-card::after{
+  content:'';
+  position:absolute;
+  width:160px;
+  height:160px;
+  right:-70px;
+  top:-80px;
+  border-radius:50%;
+  background:color-mix(in srgb,var(--acc) 16%,transparent);
+  pointer-events:none;
+}
+.greeting-copy{position:relative;z-index:1;min-width:0}
+.greeting-kicker{
+  font-size:11px;
+  color:var(--tx3);
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  margin-bottom:5px;
+}
+.greeting-title{
+  font-size:24px;
+  line-height:1.15;
+  font-weight:700;
+  letter-spacing:-.03em;
+  margin-bottom:8px;
+}
+.greeting-quote{
+  font-size:13px;
+  line-height:1.55;
+  color:var(--tx2);
+  max-width:680px;
+}
+.greeting-icon{
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  background:var(--bg);
+  border:0.5px solid var(--bd);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--acc-d);
+  font-size:22px;
+  flex-shrink:0;
+  position:relative;
+  z-index:1;
+}
+@media(max-width:560px){
+  .greeting-card{padding:15px}
+  .greeting-title{font-size:20px}
+  .greeting-icon{display:none}
+}
 
 /* MONTHLY */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
@@ -66,7 +139,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--tx);min-height:10
 .week-cell{height:44px;border-right:0.5px solid var(--bd);border-bottom:0.5px solid var(--bd);position:relative;cursor:pointer;background:var(--bg);transition:background .1s;overflow:hidden}
 .week-cell:hover{background:var(--bg2)}
 .week-cell:last-child{border-right:none}
-.week-event{position:absolute;left:2px;right:2px;border-radius:4px;font-size:9px;padding:2px 4px;overflow:hidden;display:flex;align-items:flex-start;gap:2px;pointer-events:none;z-index:1;line-height:1.2}
+.week-event{position:absolute;left:2px;right:2px;border-radius:4px;font-size:9px;padding:2px 4px;overflow:hidden;display:flex;align-items:flex-start;gap:2px;pointer-events:auto;z-index:1;line-height:1.2}
 .week-event i{font-size:9px;flex-shrink:0;margin-top:1px}
 .week-all-day-label{font-size:10px;color:var(--tx3);text-align:right;padding:8px 6px;border-right:0.5px solid var(--bd);border-bottom:0.5px solid var(--bd);background:var(--bg2);line-height:1.25}
 .week-all-day-label span{font-size:9px;color:var(--tx3)}
@@ -77,7 +150,7 @@ body{font-family:var(--font);background:var(--bg3);color:var(--tx);min-height:10
 .week-chip i{font-size:9px;flex-shrink:0}
 .week-chip span{overflow:hidden;text-overflow:ellipsis}
 .week-task-chip{background:var(--acc-l);color:var(--acc-d)}
-.week-important-chip{background:#FBEAF0;color:#72243E}
+.week-important-chip{background:var(--amber-l);color:var(--amber-d)}
 .week-more-chip{background:var(--bg2);color:var(--tx3);justify-content:center;font-weight:500;border-color:var(--bd)}
 
 /* DAILY + DASHBOARD */
@@ -94,27 +167,27 @@ body{font-family:var(--font);background:var(--bg3);color:var(--tx);min-height:10
 .check.done{background:var(--acc);border-color:var(--acc);color:#fff}
 .item-text.done{text-decoration:line-through;color:var(--tx3)}
 .badge{font-size:10px;border-radius:4px;padding:1px 5px;font-weight:500;white-space:nowrap;flex-shrink:0}
-.badge-high{background:#FEE2E2;color:#991B1B}
-.badge-medium{background:#FEF3C7;color:#92400E}
-.badge-low{background:#D1FAE5;color:#065F46}
+.badge-high{background:var(--coral-l);color:var(--coral-d)}
+.badge-medium{background:var(--amber-l);color:var(--amber-d)}
+.badge-low{background:var(--grn-l);color:var(--grn-d)}
 .cat-badge{font-size:10px;border-radius:4px;padding:1px 5px;background:var(--bg2);color:var(--tx2);border:0.5px solid var(--bd);white-space:nowrap}
 @media(prefers-color-scheme:dark){
-  .badge-high{background:#4B1515;color:#FCA5A5}
-  .badge-medium{background:#412700;color:#FCD34D}
-  .badge-low{background:#064020;color:#6EE7B7}
+  .badge-high{background:var(--coral-l);color:var(--coral-d)}
+  .badge-medium{background:var(--amber-l);color:var(--amber-d)}
+  .badge-low{background:var(--grn-l);color:var(--grn-d)}
 }
 .deadline-text,.appt-time,.meta-line{font-size:11px;color:var(--tx3);margin-top:1px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
-.deadline-text.overdue{color:#DC2626}
+.deadline-text.overdue{color:var(--coral)}
 .appt-icon-dot{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;margin-top:1px}
 .empty-note{font-size:12px;color:var(--tx3);padding:6px 0;font-style:italic}
 .delete-btn{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:13px;padding:0 2px;margin-left:auto;flex-shrink:0}
-.delete-btn:hover{color:#DC2626}
+.delete-btn:hover{color:var(--coral)}
 
 /* DASHBOARD TOOLBAR */
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;background:var(--bg2);border:0.5px solid var(--bd);border-radius:var(--rl);padding:10px;margin-bottom:12px}
 .tool-btn{display:flex;align-items:center;gap:6px;padding:7px 10px;border:0.5px solid var(--bd);border-radius:var(--r);background:var(--bg);color:var(--tx2);font-size:12px;cursor:pointer;font-family:var(--font)}
 .tool-btn:hover{background:var(--bg3);color:var(--tx)}
-.tool-btn.danger:hover{color:#DC2626;border-color:#DC2626}
+.tool-btn.danger:hover{color:var(--coral);border-color:var(--coral)}
 
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:center;justify-content:center;padding:1rem}
@@ -153,25 +226,108 @@ body{font-family:var(--font);background:var(--bg3);color:var(--tx);min-height:10
 /* ADD BUTTONS */
 .add-btn{display:flex;align-items:center;gap:6px;margin-top:10px;padding:6px 10px;border:0.5px dashed var(--bd2);border-radius:var(--r);background:none;cursor:pointer;font-size:12px;color:var(--tx2);font-family:var(--font);width:100%;transition:background .15s}
 .add-btn:hover{background:var(--bg2)}
+
+
+/* SINGLE PAGE LAYOUT */
+.page-section{margin-top:20px;scroll-margin-top:96px}
+.page-section:first-of-type{margin-top:0}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.section-head h2{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.section-subtitle{font-size:12px;color:var(--tx3);margin-top:2px}
+.section-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.section-controls .section-label{font-size:13px;font-weight:500;color:var(--tx2);min-width:160px;text-align:center}
+.anchor-tabs .tab{display:flex;align-items:center;gap:5px}
+.data-grid{display:grid;grid-template-columns:1fr;gap:12px}
+@media(max-width:640px){.section-controls{width:100%;justify-content:space-between}.section-controls .section-label{flex:1;min-width:0}.anchor-tabs{overflow-x:auto;max-width:100%;flex-wrap:nowrap}.tab{white-space:nowrap}.planner{padding:1rem}}
+
 </style>
 </head>
 <body>
 <div class="planner">
   <div class="nav">
-    <div class="tabs">
-      <button class="tab active" onclick="switchView('dashboard')">Dashboard</button>
-      <button class="tab" onclick="switchView('monthly')">Monthly</button>
-      <button class="tab" onclick="switchView('weekly')">Weekly</button>
-      <button class="tab" onclick="switchView('daily')">Daily</button>
-    </div>
-    <div class="nav-center">
-      <button class="btn-icon" onclick="navigate(-1)" aria-label="Previous"><i class="ti ti-chevron-left"></i></button>
-      <h2 id="period-label"></h2>
-      <button class="btn-icon" onclick="navigate(1)" aria-label="Next"><i class="ti ti-chevron-right"></i></button>
+    <div class="tabs anchor-tabs" aria-label="Page sections">
+      <button class="tab active" onclick="scrollToSection('today-section')"><i class="ti ti-layout-dashboard"></i> Today</button>
+      <button class="tab" onclick="scrollToSection('month-section')"><i class="ti ti-calendar-month"></i> Month</button>
+      <button class="tab" onclick="scrollToSection('week-section')"><i class="ti ti-calendar-week"></i> Week</button>
+      <button class="tab" onclick="scrollToSection('day-section')"><i class="ti ti-calendar-day"></i> Day</button>
+      <button class="tab" onclick="scrollToSection('data-section')"><i class="ti ti-database"></i> Data</button>
     </div>
     <button class="btn-icon" onclick="goToday()" title="Go to today"><i class="ti ti-calendar-event"></i></button>
   </div>
-  <div id="view-area"></div>
+
+  <section id="greeting-section" class="greeting-card" aria-label="Daily greeting">
+    <div class="greeting-copy">
+      <div class="greeting-kicker" id="greeting-date"></div>
+      <div class="greeting-title" id="greeting-title">Good day, Haziqah</div>
+      <div class="greeting-quote" id="daily-quote"></div>
+    </div>
+    <div class="greeting-icon"><i class="ti ti-sparkles"></i></div>
+  </section>
+
+  <section id="today-section" class="page-section">
+    <div class="section-head">
+      <div>
+        <h2>Dashboard / Today overview</h2>
+        <div class="section-subtitle" id="today-label"></div>
+      </div>
+    </div>
+    <div id="dashboard-area"></div>
+  </section>
+
+  <section id="month-section" class="page-section">
+    <div class="section-head">
+      <div>
+        <h2>Monthly calendar</h2>
+        <div class="section-subtitle">Click a date to update the selected day below.</div>
+      </div>
+      <div class="section-controls">
+        <button class="btn-icon" onclick="navigateMonth(-1)" aria-label="Previous month"><i class="ti ti-chevron-left"></i></button>
+        <div class="section-label" id="month-label"></div>
+        <button class="btn-icon" onclick="navigateMonth(1)" aria-label="Next month"><i class="ti ti-chevron-right"></i></button>
+      </div>
+    </div>
+    <div id="month-area"></div>
+  </section>
+
+  <section id="week-section" class="page-section">
+    <div class="section-head">
+      <div>
+        <h2>Weekly planner</h2>
+        <div class="section-subtitle">Tasks and important dates appear in the all-day row.</div>
+      </div>
+      <div class="section-controls">
+        <button class="btn-icon" onclick="navigateWeek(-1)" aria-label="Previous week"><i class="ti ti-chevron-left"></i></button>
+        <div class="section-label" id="week-label"></div>
+        <button class="btn-icon" onclick="navigateWeek(1)" aria-label="Next week"><i class="ti ti-chevron-right"></i></button>
+      </div>
+    </div>
+    <div id="week-area"></div>
+  </section>
+
+  <section id="day-section" class="page-section">
+    <div class="section-head">
+      <div>
+        <h2>Selected day details</h2>
+        <div class="section-subtitle">Full details for the selected date.</div>
+      </div>
+      <div class="section-controls">
+        <button class="btn-icon" onclick="navigateDay(-1)" aria-label="Previous day"><i class="ti ti-chevron-left"></i></button>
+        <div class="section-label" id="day-label"></div>
+        <button class="btn-icon" onclick="navigateDay(1)" aria-label="Next day"><i class="ti ti-chevron-right"></i></button>
+      </div>
+    </div>
+    <div id="day-area"></div>
+  </section>
+
+  <section id="data-section" class="page-section">
+    <div class="section-head">
+      <div>
+        <h2>Important dates and data tools</h2>
+        <div class="section-subtitle">Manage recurring dates, backup, restore, or clear planner data.</div>
+      </div>
+    </div>
+    <div id="data-area"></div>
+  </section>
 </div>
 <div id="modal-root"></div>
 
@@ -182,14 +338,14 @@ const HOUR_START=7,HOUR_END=21;
 const ALL_HOURS=[];
 for(let h=HOUR_START;h<HOUR_END;h++) ALL_HOURS.push(h);
 const APPT_COLORS=[
-  {name:'Purple',bg:'#EEEDFE',text:'#3C3489',dot:'#7F77DD'},
-  {name:'Teal',bg:'#E1F5EE',text:'#085041',dot:'#1D9E75'},
-  {name:'Pink',bg:'#FBEAF0',text:'#72243E',dot:'#D4537E'},
-  {name:'Blue',bg:'#E6F1FB',text:'#0C447C',dot:'#378ADD'},
-  {name:'Amber',bg:'#FAEEDA',text:'#633806',dot:'#BA7517'},
-  {name:'Coral',bg:'#FAECE7',text:'#712B13',dot:'#D85A30'},
-  {name:'Green',bg:'#EAF3DE',text:'#27500A',dot:'#639922'},
-  {name:'Gray',bg:'#F1EFE8',text:'#444441',dot:'#888780'},
+  {name:'Dusty Blue',bg:'#E7EEF6',text:'#2F536F',dot:'#6F8FAF'},
+  {name:'Sage',bg:'#E7F0E6',text:'#355C3A',dot:'#7A9E7E'},
+  {name:'Warm Taupe',bg:'#EFE6D8',text:'#5F4B32',dot:'#A68A64'},
+  {name:'Mist',bg:'#EEF3F4',text:'#3C5962',dot:'#86A3A7'},
+  {name:'Soft Amber',bg:'#F3EAD6',text:'#6A5525',dot:'#BFA36A'},
+  {name:'Muted Coral',bg:'#F4E3DF',text:'#7B3F36',dot:'#C97C6D'},
+  {name:'Lavender Grey',bg:'#EDEAF4',text:'#4E4667',dot:'#8B83A6'},
+  {name:'Slate',bg:'#E8EDF2',text:'#334155',dot:'#64748B'},
 ];
 const DATE_COLORS=APPT_COLORS;
 const ICONS_APPT=['ti-calendar-event','ti-clock','ti-stethoscope','ti-barbell','ti-briefcase','ti-users','ti-home','ti-plane','ti-coffee','ti-book','ti-music','ti-heart','ti-star','ti-phone','ti-video','ti-school','ti-baby-carriage','ti-car','ti-shopping-cart','ti-tool'];
@@ -199,9 +355,82 @@ const CATEGORIES=['Work','Family','School','Personal','Errands','Other'];
 const RECURRENCES=['none','daily','weekly','monthly','yearly'];
 const RECURRENCE_LABELS={none:'No repeat',daily:'Daily',weekly:'Weekly',monthly:'Monthly',yearly:'Yearly'};
 
-let view='dashboard';
+const DAILY_WORK_QUOTES=[
+  "Tiny progress is still progress. Future you is already clapping.",
+  "Do one thing. Then pretend you have your life together.",
+  "Main character energy, but make it calendar-managed.",
+  "Today's mission: less chaos, more checked boxes.",
+  "One task at a time. We are not speedrunning burnout.",
+  "Be productive, but also drink water like a responsible adult-ish person.",
+  "Your to-do list looks scary, but you are scarier.",
+  "Low effort start, high impact finish. Let's go.",
+  "Romanticise the admin. Put on a playlist and defeat the tiny tasks.",
+  "No thoughts, just one focused task and a tiny win.",
+  "You do not need to slay the whole day. Just slay the next 20 minutes.",
+  "Today's vibe: organised enough to be dangerous.",
+  "Open the thing. Do the thing. Close the thing. Iconic.",
+  "Small wins count. Even the boring ones. Especially the boring ones.",
+  "The deadline is not the boss of you. It is more like a dramatic reminder.",
+  "You are one checklist away from feeling suspiciously powerful.",
+  "Productivity era, but with snacks and realistic expectations.",
+  "Clear one task and let the dopamine do its tiny dance.",
+  "Do it badly first. Edit later. Perfection can wait outside.",
+  "If the task is annoying, it probably gives the best relief when done.",
+  "Today's forecast: 80% focus, 20% pretending not to check messages.",
+  "You have handled worse. This spreadsheet does not scare us.",
+  "Be the calmest person in the room, even if your tabs say otherwise.",
+  "Your inbox is loud. Your plan is louder.",
+  "One email. One task. One tiny victory lap.",
+  "We are not procrastinating today. We are simply entering our efficiency arc.",
+  "Finish the tiny thing. Become unstoppable for at least seven minutes.",
+  "You do not need a perfect routine. You need a next step.",
+  "This is your sign to stop overthinking and press Save.",
+  "Busy day? Cute. We have a planner and caffeine-adjacent confidence.",
+  "Do the first task before the task grows a personality.",
+  "A clear plan is basically a soft launch of having your life together.",
+  "Today's goal: be productive without becoming a corporate robot.",
+  "The vibes are organised, the tabs are many, the mission continues.",
+  "Admin now, peace later. A very fair trade.",
+  "Handle the boring thing. Unlock the smug little peace after.",
+  "You are not behind. You are just loading your productivity screen.",
+  "Keep it simple. Keep it moving. Keep your snacks nearby.",
+  "Done is better than dramatic.",
+  "Your calendar said it believes in you. Weird, but supportive."
+];
+function getGreetingText(hour){
+  if(hour<12)return 'Good morning';
+  if(hour<18)return 'Good afternoon';
+  return 'Good evening';
+}
+function getDailyQuote(){
+  const todayKey=toInputDate(new Date());
+  let saved=null;
+  try{saved=JSON.parse(localStorage.getItem('planner_daily_quote')||'null')}catch{saved=null}
+  if(saved&&saved.date===todayKey&&Number.isInteger(saved.index)&&DAILY_WORK_QUOTES[saved.index]){
+    return DAILY_WORK_QUOTES[saved.index];
+  }
+  const previousIndex=Number.isInteger(saved?.index)?saved.index:null;
+  let index=Math.floor(Math.random()*DAILY_WORK_QUOTES.length);
+  if(previousIndex!==null&&DAILY_WORK_QUOTES.length>1&&index===previousIndex){
+    index=(index+1)%DAILY_WORK_QUOTES.length;
+  }
+  localStorage.setItem('planner_daily_quote',JSON.stringify({date:todayKey,index}));
+  return DAILY_WORK_QUOTES[index];
+}
+function renderGreeting(){
+  const now=new Date();
+  const title=document.getElementById('greeting-title');
+  const quote=document.getElementById('daily-quote');
+  const date=document.getElementById('greeting-date');
+  if(title)title.textContent=`${getGreetingText(now.getHours())}, Haziqah`;
+  if(quote)quote.textContent=getDailyQuote();
+  if(date)date.textContent=`${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
+}
+
+
 const today=new Date();
-let cursor=new Date(today);
+let monthCursor=new Date(today);
+let weekCursor=new Date(today);
 let selectedDate=new Date(today);
 
 function loadJSON(keyName,fallback){
@@ -330,39 +559,50 @@ function fmtDeadline(dl){
   return {label:`Due ${MONTHS[m-1].slice(0,3)} ${d}`,overdue:false,date:dd};
 }
 
-function switchView(v){
-  view=v;
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.textContent.toLowerCase()===v));
-  render();
+function scrollToSection(id){
+  document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});
 }
-function navigate(dir){
-  if(view==='monthly') cursor.setMonth(cursor.getMonth()+dir);
-  else if(view==='weekly') cursor.setDate(cursor.getDate()+dir*7);
-  else if(view==='daily'){cursor.setDate(cursor.getDate()+dir);selectedDate=new Date(cursor)}
-  render();
+function setActiveAnchor(id){
+  const map={
+    'today-section':'Today',
+    'month-section':'Month',
+    'week-section':'Week',
+    'day-section':'Day',
+    'data-section':'Data'
+  };
+  document.querySelectorAll('.anchor-tabs .tab').forEach(btn=>btn.classList.toggle('active',btn.textContent.trim()===map[id]));
 }
-function goToday(){cursor=new Date(today);selectedDate=new Date(today);render()}
+['today-section','month-section','week-section','day-section','data-section'].forEach(id=>{
+  window.addEventListener('scroll',()=>{
+    const sections=['today-section','month-section','week-section','day-section','data-section'];
+    let current='today-section';
+    sections.forEach(sec=>{
+      const el=document.getElementById(sec);
+      if(el&&el.getBoundingClientRect().top<=130) current=sec;
+    });
+    setActiveAnchor(current);
+  },{passive:true});
+});
+function navigateMonth(dir){monthCursor.setMonth(monthCursor.getMonth()+dir);render()}
+function navigateWeek(dir){weekCursor.setDate(weekCursor.getDate()+dir*7);render()}
+function navigateDay(dir){selectedDate.setDate(selectedDate.getDate()+dir);monthCursor=new Date(selectedDate);weekCursor=new Date(selectedDate);render();scrollToSection('day-section')}
+function goToday(){selectedDate=new Date(today);monthCursor=new Date(today);weekCursor=new Date(today);render();scrollToSection('today-section')}
 function render(){
-  const el=document.getElementById('view-area');
-  if(view==='dashboard') renderDashboard(el);
-  else if(view==='monthly') renderMonthly(el);
-  else if(view==='weekly') renderWeekly(el);
-  else renderDaily(el);
+  renderGreeting();
+  renderDashboard(document.getElementById('dashboard-area'));
+  renderMonthly(document.getElementById('month-area'));
+  renderWeekly(document.getElementById('week-area'));
+  renderDaily(document.getElementById('day-area'));
+  renderDataTools(document.getElementById('data-area'));
 }
 
 function renderDashboard(el){
-  document.getElementById('period-label').textContent='Dashboard';
+  document.getElementById('today-label').textContent=`${DAYS[today.getDay()]}, ${MONTHS[today.getMonth()]} ${today.getDate()}`;
   const todayTasks=getTaskOccurrences(today).slice(0,8);
   const todayAppts=getApptOccurrences(today).slice(0,8);
   const upcomingDeadlines=getUpcomingDeadlines(8);
   const upcomingImportant=getUpcomingImportantDates(8);
   el.innerHTML=`
-    <div class="toolbar">
-      <button class="tool-btn" onclick="exportPlanner()"><i class="ti ti-download"></i> Export JSON</button>
-      <button class="tool-btn" onclick="document.getElementById('import-file').click()"><i class="ti ti-upload"></i> Import JSON</button>
-      <input id="import-file" type="file" accept="application/json,.json" style="display:none" onchange="importPlanner(event)">
-      <button class="tool-btn danger" onclick="clearPlannerData()"><i class="ti ti-trash"></i> Clear all data</button>
-    </div>
     <div class="dashboard-grid">
       <div class="section-card">
         <div class="section-title"><i class="ti ti-checks"></i> Today’s tasks</div>
@@ -419,8 +659,8 @@ function getUpcomingImportantDates(limit){
 }
 
 function renderMonthly(el){
-  const y=cursor.getFullYear(),m=cursor.getMonth();
-  document.getElementById('period-label').textContent=`${MONTHS[m]} ${y}`;
+  const y=monthCursor.getFullYear(),m=monthCursor.getMonth();
+  document.getElementById('month-label').textContent=`${MONTHS[m]} ${y}`;
   const startDay=new Date(y,m,1).getDay();
   let html=`<div class="cal-grid">`;
   DAYS.forEach(d=>html+=`<div class="cal-header">${d}</div>`);
@@ -435,7 +675,7 @@ function renderMonthly(el){
     const imps=getImportantOccurrences(d);
     const previewItems=getMonthlyPreviewItems(d,tasks,appts,imps);
     let cls='cal-day'+(inMonth?'':' other-month')+(isToday?' today':'')+(isSel?' selected':'');
-    html+=`<div class="${cls}" onclick="openDayPreview(${d.getFullYear()},${d.getMonth()},${d.getDate()},event)"><div class="day-num">${d.getDate()}</div>`;
+    html+=`<div class="${cls}" onclick="selectDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})"><div class="day-num">${d.getDate()}</div>`;
     previewItems.slice(0,3).forEach(item=>html+=renderMonthChip(item));
     if(previewItems.length>3) html+=`<div class="cal-chip more-chip">+${previewItems.length-3} more</div>`;
     html+=`</div>`;
@@ -444,11 +684,11 @@ function renderMonthly(el){
   html+=`</div><div class="legend">
     <span><span class="legend-dot" style="background:var(--acc)"></span>Task</span>
     <span><span class="legend-dot" style="background:var(--grn)"></span>Appointment</span>
-    <span><span class="legend-dot" style="background:#D4537E"></span>Important date</span>
+    <span><span class="legend-dot" style="background:var(--amber)"></span>Important date</span>
   </div>`;
   el.innerHTML=html;
 }
-function selectDay(y,m,d){selectedDate=new Date(y,m,d);cursor=new Date(y,m,d);switchView('daily')}
+function selectDay(y,m,d){selectedDate=new Date(y,m,d);monthCursor=new Date(y,m,d);weekCursor=new Date(y,m,d);render();scrollToSection('day-section')}
 function getMonthlyPreviewItems(d,tasks,appts,imps){
   const items=[];
   appts.forEach(o=>{
@@ -544,10 +784,10 @@ function renderWeeklyAllDayCell(d){
   return html;
 }
 function renderWeekly(el){
-  const dow=cursor.getDay();
-  const weekStart=new Date(cursor);weekStart.setDate(cursor.getDate()-dow);
+  const dow=weekCursor.getDay();
+  const weekStart=new Date(weekCursor);weekStart.setDate(weekCursor.getDate()-dow);
   const weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
-  document.getElementById('period-label').textContent=`${MONTHS[weekStart.getMonth()].slice(0,3)} ${weekStart.getDate()} – ${MONTHS[weekEnd.getMonth()].slice(0,3)} ${weekEnd.getDate()}`;
+  document.getElementById('week-label').textContent=`${MONTHS[weekStart.getMonth()].slice(0,3)} ${weekStart.getDate()} – ${MONTHS[weekEnd.getMonth()].slice(0,3)} ${weekEnd.getDate()}`;
   const dayAppts=[];
   for(let i=0;i<7;i++){const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);dayAppts.push(getApptOccurrences(d))}
   let html=`<div class="week-wrap"><div class="week-grid"><div class="week-corner"></div>`;
@@ -581,7 +821,7 @@ function renderWeekly(el){
 
 function renderDaily(el){
   const d=selectedDate,dk=key(d);
-  document.getElementById('period-label').textContent=`${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
+  document.getElementById('day-label').textContent=`${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
   const tasks=getTaskOccurrences(d);
   const appts=getApptOccurrences(d);
   const imps=getImportantOccurrences(d);
@@ -673,6 +913,43 @@ function renderUpcomingImportantRows(items){
       </div>
     </div>`;
   }).join('');
+}
+
+
+function renderAllImportantRows(items){
+  return items.map(o=>{
+    const id=o.item,c=DATE_COLORS[id.color??2];
+    const dt=dateFromInputValue(id.date);
+    return `<div class="item-row" onclick="openImportantModal(${o.index})">
+      <div class="appt-icon-dot" style="background:${c.bg};color:${c.text}"><i class="ti ${id.icon||'ti-star'}"></i></div>
+      <div style="flex:1;min-width:0">
+        <div class="item-main-text">${escHtml(id.title)}</div>
+        <div class="appt-time">${dt?fmtDate(dt):''} · ${escHtml(id.category||'Other')} ${(id.recurrence&&id.recurrence!=='none')?`<span><i class="ti ti-repeat"></i> ${RECURRENCE_LABELS[id.recurrence]}</span>`:''}</div>
+      </div>
+      <button class="delete-btn" onclick="deleteImportant(${o.index},event)" title="Delete"><i class="ti ti-x"></i></button>
+    </div>`;
+  }).join('');
+}
+function renderDataTools(el){
+  const allImportant=importantDates.map((item,index)=>({index,item:normaliseImportant(item)}))
+    .sort((a,b)=>{
+      const da=dateFromInputValue(a.item.date),db=dateFromInputValue(b.item.date);
+      if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;return da-db;
+    });
+  el.innerHTML=`
+    <div class="toolbar">
+      <button class="tool-btn" onclick="exportPlanner()"><i class="ti ti-download"></i> Export JSON</button>
+      <button class="tool-btn" onclick="document.getElementById('import-file').click()"><i class="ti ti-upload"></i> Import JSON</button>
+      <input id="import-file" type="file" accept="application/json,.json" style="display:none" onchange="importPlanner(event)">
+      <button class="tool-btn danger" onclick="clearPlannerData()"><i class="ti ti-trash"></i> Clear all data</button>
+    </div>
+    <div class="data-grid">
+      <div class="section-card">
+        <div class="section-title"><i class="ti ti-star"></i> All important dates</div>
+        ${renderAllImportantRows(allImportant) || '<div class="empty-note">No important dates saved yet.</div>'}
+        <button class="add-btn" onclick="openImportantModal()"><i class="ti ti-plus"></i> Add date</button>
+      </div>
+    </div>`;
 }
 
 function closeModal(){document.getElementById('modal-root').innerHTML=''}
@@ -840,6 +1117,7 @@ function clearPlannerData(){
 }
 
 render();
+setInterval(renderGreeting,60000);
 </script>
 </body>
 </html>

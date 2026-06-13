@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Digital Planner</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f4f2;--bg3:#efede8;
+  --tx:#1a1a1a;--tx2:#6b6b6b;--tx3:#9e9e9e;
+  --bd:rgba(0,0,0,0.1);--bd2:rgba(0,0,0,0.2);
+  --acc:#7F77DD;--acc-l:#EEEDFE;--acc-d:#3C3489;
+  --grn:#1D9E75;--grn-l:#E1F5EE;--grn-d:#085041;
+  --r:8px;--rl:12px;
+  --font:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1c1c1c;--bg2:#272727;--bg3:#2e2e2e;
+    --tx:#f0f0f0;--tx2:#aaa;--tx3:#777;
+    --bd:rgba(255,255,255,0.1);--bd2:rgba(255,255,255,0.2);
+    --acc-l:#2a2860;--acc-d:#b8b3f5;
+    --grn-l:#0d3327;--grn-d:#7ed8b8;
+  }
+}
+body{font-family:var(--font);background:var(--bg3);color:var(--tx);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem 1rem}
+.planner{background:var(--bg);border-radius:var(--rl);border:0.5px solid var(--bd);padding:1.5rem;width:100%;max-width:860px}
+
+/* NAV */
+.nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px}
+.tabs{display:flex;gap:4px;background:var(--bg2);border-radius:var(--r);padding:3px;flex-wrap:wrap}
+.tab{padding:5px 13px;border:none;background:none;border-radius:6px;font-size:13px;cursor:pointer;color:var(--tx2);font-family:var(--font);transition:background .15s}
+.tab.active{background:var(--bg);color:var(--tx);font-weight:500;border:0.5px solid var(--bd)}
+.nav-center{display:flex;align-items:center;gap:10px}
+.nav-center h2{font-size:16px;font-weight:500;min-width:180px;text-align:center}
+.btn-icon{background:none;border:0.5px solid var(--bd);border-radius:var(--r);width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:16px;transition:background .15s}
+.btn-icon:hover{background:var(--bg2)}
+
+/* MONTHLY */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-header{font-size:11px;color:var(--tx3);text-align:center;padding:4px 0 6px;text-transform:uppercase;letter-spacing:.06em}
+.cal-day{min-height:78px;border:0.5px solid var(--bd);border-radius:6px;padding:5px 5px;cursor:pointer;background:var(--bg);transition:background .1s;overflow:hidden}
+.cal-day:hover{background:var(--bg2)}
+.cal-day.other-month{opacity:.3}
+.cal-day.today .day-num{background:var(--acc);color:#fff;border-radius:50%}
+.cal-day.selected{border-color:var(--acc);border-width:1.5px}
+.day-num{font-size:12px;font-weight:500;width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-bottom:2px}
+.cal-chip{font-size:9px;border-radius:3px;padding:1px 3px;margin:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:2px;max-width:100%}
+.cal-chip i{font-size:9px;flex-shrink:0}
+.cal-chip.task-chip{background:var(--acc-l);color:var(--acc-d)}
+.cal-chip.more-chip{background:var(--bg2);color:var(--tx3);justify-content:center;font-weight:500}
+.cal-dot{width:6px;height:6px;border-radius:50%;margin:2px 0;flex-shrink:0}
+.legend{display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--tx3);align-items:center;flex-wrap:wrap}
+.legend-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+
+/* WEEKLY */
+.week-wrap{overflow-x:auto}
+.week-grid{display:grid;grid-template-columns:48px repeat(7,1fr);border:0.5px solid var(--bd);border-radius:var(--rl);overflow:hidden;min-width:560px}
+.week-col-header{text-align:center;padding:6px 4px;border-bottom:0.5px solid var(--bd);background:var(--bg2);font-size:11px;color:var(--tx2);line-height:1.4;border-right:0.5px solid var(--bd)}
+.week-col-header .wday-num{font-size:15px;font-weight:500;color:var(--tx);display:block}
+.week-col-header.today-col,.week-col-header.today-col .wday-num{color:var(--acc)}
+.week-corner{background:var(--bg2);border-bottom:0.5px solid var(--bd);border-right:0.5px solid var(--bd)}
+.time-label{font-size:10px;color:var(--tx3);text-align:right;padding:4px 6px 0;border-right:0.5px solid var(--bd);border-bottom:0.5px solid var(--bd);height:44px;background:var(--bg)}
+.week-cell{height:44px;border-right:0.5px solid var(--bd);border-bottom:0.5px solid var(--bd);position:relative;cursor:pointer;background:var(--bg);transition:background .1s;overflow:hidden}
+.week-cell:hover{background:var(--bg2)}
+.week-cell:last-child{border-right:none}
+.week-event{position:absolute;left:2px;right:2px;border-radius:4px;font-size:9px;padding:2px 4px;overflow:hidden;display:flex;align-items:flex-start;gap:2px;pointer-events:none;z-index:1;line-height:1.2}
+.week-event i{font-size:9px;flex-shrink:0;margin-top:1px}
+.week-all-day-label{font-size:10px;color:var(--tx3);text-align:right;padding:8px 6px;border-right:0.5px solid var(--bd);border-bottom:0.5px solid var(--bd);background:var(--bg2);line-height:1.25}
+.week-all-day-label span{font-size:9px;color:var(--tx3)}
+.week-all-day-cell{min-height:62px;border-right:0.5px solid var(--bd);border-bottom:0.5px solid var(--bd);background:var(--bg);padding:4px;cursor:pointer;overflow:hidden}
+.week-all-day-cell:hover{background:var(--bg2)}
+.week-chip{font-size:9px;border-radius:4px;padding:2px 4px;margin-bottom:3px;display:flex;align-items:center;gap:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;cursor:pointer;border:0.5px solid transparent}
+.week-chip:hover{filter:brightness(.97);border-color:var(--bd2)}
+.week-chip i{font-size:9px;flex-shrink:0}
+.week-chip span{overflow:hidden;text-overflow:ellipsis}
+.week-task-chip{background:var(--acc-l);color:var(--acc-d)}
+.week-important-chip{background:#FBEAF0;color:#72243E}
+.week-more-chip{background:var(--bg2);color:var(--tx3);justify-content:center;font-weight:500;border-color:var(--bd)}
+
+/* DAILY + DASHBOARD */
+.daily-grid,.dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.daily-grid.three-col,.dashboard-grid.three-col{grid-template-columns:1fr 1fr 1fr}
+.dashboard-grid{margin-top:12px}
+@media(max-width:700px){.daily-grid,.daily-grid.three-col,.dashboard-grid,.dashboard-grid.three-col{grid-template-columns:1fr}.planner{padding:1rem}}
+.section-card{background:var(--bg);border:0.5px solid var(--bd);border-radius:var(--rl);padding:14px;min-width:0}
+.section-title{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.item-row{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--bd);font-size:13px;cursor:pointer}
+.item-row:hover .item-main-text{text-decoration:underline;text-decoration-color:var(--bd2)}
+.item-row:last-of-type{border-bottom:none}
+.check{width:15px;height:15px;border:0.5px solid var(--bd2);border-radius:3px;flex-shrink:0;margin-top:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.check.done{background:var(--acc);border-color:var(--acc);color:#fff}
+.item-text.done{text-decoration:line-through;color:var(--tx3)}
+.badge{font-size:10px;border-radius:4px;padding:1px 5px;font-weight:500;white-space:nowrap;flex-shrink:0}
+.badge-high{background:#FEE2E2;color:#991B1B}
+.badge-medium{background:#FEF3C7;color:#92400E}
+.badge-low{background:#D1FAE5;color:#065F46}
+.cat-badge{font-size:10px;border-radius:4px;padding:1px 5px;background:var(--bg2);color:var(--tx2);border:0.5px solid var(--bd);white-space:nowrap}
+@media(prefers-color-scheme:dark){
+  .badge-high{background:#4B1515;color:#FCA5A5}
+  .badge-medium{background:#412700;color:#FCD34D}
+  .badge-low{background:#064020;color:#6EE7B7}
+}
+.deadline-text,.appt-time,.meta-line{font-size:11px;color:var(--tx3);margin-top:1px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.deadline-text.overdue{color:#DC2626}
+.appt-icon-dot{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;margin-top:1px}
+.empty-note{font-size:12px;color:var(--tx3);padding:6px 0;font-style:italic}
+.delete-btn{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:13px;padding:0 2px;margin-left:auto;flex-shrink:0}
+.delete-btn:hover{color:#DC2626}
+
+/* DASHBOARD TOOLBAR */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;background:var(--bg2);border:0.5px solid var(--bd);border-radius:var(--rl);padding:10px;margin-bottom:12px}
+.tool-btn{display:flex;align-items:center;gap:6px;padding:7px 10px;border:0.5px solid var(--bd);border-radius:var(--r);background:var(--bg);color:var(--tx2);font-size:12px;cursor:pointer;font-family:var(--font)}
+.tool-btn:hover{background:var(--bg3);color:var(--tx)}
+.tool-btn.danger:hover{color:#DC2626;border-color:#DC2626}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal{background:var(--bg);border-radius:var(--rl);border:0.5px solid var(--bd);padding:1.5rem;width:100%;max-width:460px;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:15px;font-weight:500;margin-bottom:1rem;display:flex;align-items:center;gap:6px}
+.form-row{margin-bottom:10px}
+.form-row label{display:block;font-size:11px;color:var(--tx2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.form-row input,.form-row select,.form-row textarea{width:100%;font-size:13px;padding:7px 9px;border:0.5px solid var(--bd2);border-radius:var(--r);background:var(--bg2);color:var(--tx);font-family:var(--font);outline:none}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:var(--acc)}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.color-picker{display:flex;gap:6px;flex-wrap:wrap}
+.color-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.color-swatch.selected{border-color:var(--tx);transform:scale(1.15)}
+.icon-picker{display:flex;gap:6px;flex-wrap:wrap;max-height:100px;overflow-y:auto}
+.icon-opt{width:28px;height:28px;border-radius:6px;cursor:pointer;border:0.5px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:15px;transition:background .1s}
+.icon-opt:hover,.icon-opt.selected{background:var(--acc-l);border-color:var(--acc);color:var(--acc-d)}
+.modal-btns{display:flex;gap:8px;margin-top:1rem;justify-content:flex-end;flex-wrap:wrap}
+.modal-btns button{padding:7px 14px;border-radius:var(--r);font-size:13px;cursor:pointer;font-family:var(--font);border:0.5px solid var(--bd)}
+.btn-primary{background:var(--acc);color:#fff;border-color:var(--acc)!important}
+.btn-primary:hover{opacity:.9}
+.btn-cancel{background:var(--bg2);color:var(--tx2)}
+.btn-cancel:hover{background:var(--bg3)}
+
+
+/* DAY PREVIEW POP-UP */
+.preview-date{font-size:12px;color:var(--tx3);margin:-4px 0 12px}
+.preview-list{display:flex;flex-direction:column;border:0.5px solid var(--bd);border-radius:var(--r);overflow:hidden;background:var(--bg)}
+.preview-row{display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border-bottom:0.5px solid var(--bd);font-size:13px;cursor:pointer;background:var(--bg)}
+.preview-row:last-child{border-bottom:none}
+.preview-row:hover{background:var(--bg2)}
+.preview-icon{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;margin-top:1px}
+.preview-meta{font-size:11px;color:var(--tx3);margin-top:1px;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.preview-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px}
+@media(max-width:520px){.preview-actions{grid-template-columns:1fr}}
+
+/* ADD BUTTONS */
+.add-btn{display:flex;align-items:center;gap:6px;margin-top:10px;padding:6px 10px;border:0.5px dashed var(--bd2);border-radius:var(--r);background:none;cursor:pointer;font-size:12px;color:var(--tx2);font-family:var(--font);width:100%;transition:background .15s}
+.add-btn:hover{background:var(--bg2)}
+</style>
+</head>
+<body>
+<div class="planner">
+  <div class="nav">
+    <div class="tabs">
+      <button class="tab active" onclick="switchView('dashboard')">Dashboard</button>
+      <button class="tab" onclick="switchView('monthly')">Monthly</button>
+      <button class="tab" onclick="switchView('weekly')">Weekly</button>
+      <button class="tab" onclick="switchView('daily')">Daily</button>
+    </div>
+    <div class="nav-center">
+      <button class="btn-icon" onclick="navigate(-1)" aria-label="Previous"><i class="ti ti-chevron-left"></i></button>
+      <h2 id="period-label"></h2>
+      <button class="btn-icon" onclick="navigate(1)" aria-label="Next"><i class="ti ti-chevron-right"></i></button>
+    </div>
+    <button class="btn-icon" onclick="goToday()" title="Go to today"><i class="ti ti-calendar-event"></i></button>
+  </div>
+  <div id="view-area"></div>
+</div>
+<div id="modal-root"></div>
+
+<script>
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const HOUR_START=7,HOUR_END=21;
+const ALL_HOURS=[];
+for(let h=HOUR_START;h<HOUR_END;h++) ALL_HOURS.push(h);
+const APPT_COLORS=[
+  {name:'Purple',bg:'#EEEDFE',text:'#3C3489',dot:'#7F77DD'},
+  {name:'Teal',bg:'#E1F5EE',text:'#085041',dot:'#1D9E75'},
+  {name:'Pink',bg:'#FBEAF0',text:'#72243E',dot:'#D4537E'},
+  {name:'Blue',bg:'#E6F1FB',text:'#0C447C',dot:'#378ADD'},
+  {name:'Amber',bg:'#FAEEDA',text:'#633806',dot:'#BA7517'},
+  {name:'Coral',bg:'#FAECE7',text:'#712B13',dot:'#D85A30'},
+  {name:'Green',bg:'#EAF3DE',text:'#27500A',dot:'#639922'},
+  {name:'Gray',bg:'#F1EFE8',text:'#444441',dot:'#888780'},
+];
+const DATE_COLORS=APPT_COLORS;
+const ICONS_APPT=['ti-calendar-event','ti-clock','ti-stethoscope','ti-barbell','ti-briefcase','ti-users','ti-home','ti-plane','ti-coffee','ti-book','ti-music','ti-heart','ti-star','ti-phone','ti-video','ti-school','ti-baby-carriage','ti-car','ti-shopping-cart','ti-tool'];
+const ICONS_DATE=['ti-cake','ti-heart','ti-gift','ti-star','ti-school','ti-flag','ti-beach','ti-confetti','ti-calendar-heart','ti-award','ti-sun','ti-moon','ti-flower','ti-home','ti-plane','ti-users','ti-baby-carriage','ti-music','ti-camera','ti-bookmark'];
+const PRIORITY_LABELS={high:'High',medium:'Medium',low:'Low'};
+const CATEGORIES=['Work','Family','School','Personal','Errands','Other'];
+const RECURRENCES=['none','daily','weekly','monthly','yearly'];
+const RECURRENCE_LABELS={none:'No repeat',daily:'Daily',weekly:'Weekly',monthly:'Monthly',yearly:'Yearly'};
+
+let view='dashboard';
+const today=new Date();
+let cursor=new Date(today);
+let selectedDate=new Date(today);
+
+function loadJSON(keyName,fallback){
+  try{return JSON.parse(localStorage.getItem(keyName)||JSON.stringify(fallback))}catch{return fallback}
+}
+function loadData(){return loadJSON('planner_data',{})}
+function saveData(){localStorage.setItem('planner_data',JSON.stringify(data))}
+function loadImportant(){return loadJSON('planner_important',[])}
+function saveImportantData(){localStorage.setItem('planner_important',JSON.stringify(importantDates))}
+let data=loadData();
+let importantDates=loadImportant();
+
+function key(d){return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`}
+function keyStr(y,m,d){return `${y}-${m+1}-${d}`}
+function parseKey(k){const p=String(k).split('-').map(Number);return new Date(p[0],p[1]-1,p[2])}
+function toInputDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function inputDateFromKey(k){return toInputDate(parseKey(k))}
+function escHtml(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function isSameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate()}
+function startOfDay(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate())}
+function daysBetween(a,b){return Math.round((startOfDay(b)-startOfDay(a))/(1000*60*60*24))}
+function fmtHour(h){if(h===12)return'12pm';return h>12?(h-12)+'pm':h+'am'}
+function fmtDate(d){return `${MONTHS[d.getMonth()].slice(0,3)} ${d.getDate()}, ${d.getFullYear()}`}
+function normaliseRecurrence(r,defaultValue='none'){return RECURRENCES.includes(r)?r:defaultValue}
+
+function normaliseTask(t){
+  return {
+    text:t?.text||'',
+    done:t?.done??false,
+    doneDates:t?.doneDates||{},
+    priority:t?.priority||'medium',
+    deadline:t?.deadline||'',
+    recurrence:normaliseRecurrence(t?.recurrence,'none'),
+    category:CATEGORIES.includes(t?.category)?t.category:'Other'
+  };
+}
+function normaliseAppt(a){
+  const start=a?.startHour??a?.hour??9;
+  let end=a?.endHour??start+1;
+  if(end<=start) end=start+1;
+  return {
+    text:a?.text||'',
+    startHour:start,
+    endHour:Math.min(end,HOUR_END),
+    color:a?.color??0,
+    icon:a?.icon||'ti-calendar-event',
+    recurrence:normaliseRecurrence(a?.recurrence,'none'),
+    category:CATEGORIES.includes(a?.category)?a.category:'Other'
+  };
+}
+function normaliseImportant(i){
+  return {
+    title:i?.title||'',
+    date:i?.date||'',
+    category:i?.category||'Other',
+    color:i?.color??2,
+    icon:i?.icon||'ti-star',
+    recurrence:normaliseRecurrence(i?.recurrence,'yearly')
+  };
+}
+function getDataByKey(dk){
+  if(!data[dk]) data[dk]={tasks:[],appts:[]};
+  data[dk].tasks=(data[dk].tasks||[]).map(normaliseTask);
+  data[dk].appts=(data[dk].appts||[]).map(normaliseAppt);
+  return data[dk];
+}
+function getData(d){return getDataByKey(key(d))}
+function migrateAll(){
+  Object.keys(data).forEach(dk=>getDataByKey(dk));
+  importantDates=(importantDates||[]).map(normaliseImportant);
+  saveData();
+  saveImportantData();
+}
+migrateAll();
+
+function matchesRecurrence(baseDate,targetDate,recurrence){
+  const r=normaliseRecurrence(recurrence,'none');
+  const diff=daysBetween(baseDate,targetDate);
+  if(diff<0) return false;
+  if(r==='none') return diff===0;
+  if(r==='daily') return true;
+  if(r==='weekly') return diff%7===0;
+  if(r==='monthly') return baseDate.getDate()===targetDate.getDate();
+  if(r==='yearly') return baseDate.getMonth()===targetDate.getMonth()&&baseDate.getDate()===targetDate.getDate();
+  return false;
+}
+function getTaskOccurrences(d){
+  const out=[];
+  Object.keys(data).forEach(dk=>{
+    const base=parseKey(dk);
+    getDataByKey(dk).tasks.forEach((t,i)=>{
+      if(matchesRecurrence(base,d,t.recurrence)) out.push({originDk:dk,index:i,item:t,occurrenceDk:key(d),baseDate:base});
+    });
+  });
+  return out;
+}
+function getApptOccurrences(d){
+  const out=[];
+  Object.keys(data).forEach(dk=>{
+    const base=parseKey(dk);
+    getDataByKey(dk).appts.forEach((a,i)=>{
+      if(matchesRecurrence(base,d,a.recurrence)) out.push({originDk:dk,index:i,item:a,occurrenceDk:key(d),baseDate:base});
+    });
+  });
+  return out.sort((a,b)=>(a.item.startHour??9)-(b.item.startHour??9));
+}
+function getImportantOccurrences(d){
+  return importantDates.map((id,index)=>({index,item:normaliseImportant(id)})).filter(o=>{
+    if(!o.item.date) return false;
+    const [y,m,day]=o.item.date.split('-').map(Number);
+    return matchesRecurrence(new Date(y,m-1,day),d,o.item.recurrence);
+  });
+}
+function isTaskDone(t,occurrenceDk){
+  if((t.recurrence||'none')==='none') return !!t.done;
+  return !!(t.doneDates&&t.doneDates[occurrenceDk]);
+}
+function fmtDeadline(dl){
+  if(!dl) return null;
+  const [y,m,d]=dl.split('-').map(Number);
+  const dd=new Date(y,m-1,d);
+  const diff=daysBetween(today,dd);
+  if(diff<0) return {label:`Overdue by ${-diff}d`,overdue:true,date:dd};
+  if(diff===0) return {label:'Due today',overdue:false,date:dd};
+  if(diff===1) return {label:'Due tomorrow',overdue:false,date:dd};
+  return {label:`Due ${MONTHS[m-1].slice(0,3)} ${d}`,overdue:false,date:dd};
+}
+
+function switchView(v){
+  view=v;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.textContent.toLowerCase()===v));
+  render();
+}
+function navigate(dir){
+  if(view==='monthly') cursor.setMonth(cursor.getMonth()+dir);
+  else if(view==='weekly') cursor.setDate(cursor.getDate()+dir*7);
+  else if(view==='daily'){cursor.setDate(cursor.getDate()+dir);selectedDate=new Date(cursor)}
+  render();
+}
+function goToday(){cursor=new Date(today);selectedDate=new Date(today);render()}
+function render(){
+  const el=document.getElementById('view-area');
+  if(view==='dashboard') renderDashboard(el);
+  else if(view==='monthly') renderMonthly(el);
+  else if(view==='weekly') renderWeekly(el);
+  else renderDaily(el);
+}
+
+function renderDashboard(el){
+  document.getElementById('period-label').textContent='Dashboard';
+  const todayTasks=getTaskOccurrences(today).slice(0,8);
+  const todayAppts=getApptOccurrences(today).slice(0,8);
+  const upcomingDeadlines=getUpcomingDeadlines(8);
+  const upcomingImportant=getUpcomingImportantDates(8);
+  el.innerHTML=`
+    <div class="toolbar">
+      <button class="tool-btn" onclick="exportPlanner()"><i class="ti ti-download"></i> Export JSON</button>
+      <button class="tool-btn" onclick="document.getElementById('import-file').click()"><i class="ti ti-upload"></i> Import JSON</button>
+      <input id="import-file" type="file" accept="application/json,.json" style="display:none" onchange="importPlanner(event)">
+      <button class="tool-btn danger" onclick="clearPlannerData()"><i class="ti ti-trash"></i> Clear all data</button>
+    </div>
+    <div class="dashboard-grid">
+      <div class="section-card">
+        <div class="section-title"><i class="ti ti-checks"></i> Today’s tasks</div>
+        ${renderTaskRows(todayTasks) || '<div class="empty-note">No tasks for today.</div>'}
+        <button class="add-btn" onclick="openTaskModal('${key(today)}')"><i class="ti ti-plus"></i> Add task</button>
+      </div>
+      <div class="section-card">
+        <div class="section-title"><i class="ti ti-calendar-event"></i> Today’s appointments</div>
+        ${renderApptRows(todayAppts) || '<div class="empty-note">No appointments for today.</div>'}
+        <button class="add-btn" onclick="openApptModal('${key(today)}')"><i class="ti ti-plus"></i> Add appointment</button>
+      </div>
+      <div class="section-card">
+        <div class="section-title"><i class="ti ti-alert-circle"></i> Upcoming deadlines</div>
+        ${renderUpcomingDeadlineRows(upcomingDeadlines) || '<div class="empty-note">No upcoming deadlines.</div>'}
+      </div>
+      <div class="section-card">
+        <div class="section-title"><i class="ti ti-star"></i> Upcoming important dates</div>
+        ${renderUpcomingImportantRows(upcomingImportant) || '<div class="empty-note">No upcoming important dates.</div>'}
+        <button class="add-btn" onclick="openImportantModal()"><i class="ti ti-plus"></i> Add date</button>
+      </div>
+    </div>`;
+}
+function getUpcomingDeadlines(limit){
+  const out=[];
+  Object.keys(data).forEach(dk=>{
+    getDataByKey(dk).tasks.forEach((t,index)=>{
+      if(!t.deadline) return;
+      const dl=fmtDeadline(t.deadline);
+      if(!dl) return;
+      if(dl.date>=startOfDay(today) && !isTaskDone(t,key(today))) out.push({originDk:dk,index,item:t,deadlineDate:dl.date});
+    });
+  });
+  return out.sort((a,b)=>a.deadlineDate-b.deadlineDate).slice(0,limit);
+}
+function nextOccurrenceForImportant(item){
+  if(!item.date) return null;
+  const [y,m,d]=item.date.split('-').map(Number);
+  const base=new Date(y,m-1,d);
+  const r=normaliseRecurrence(item.recurrence,'yearly');
+  const todayMid=startOfDay(today);
+  if(r==='none') return base>=todayMid?base:null;
+  for(let i=0;i<=370;i++){
+    const candidate=new Date(todayMid);
+    candidate.setDate(todayMid.getDate()+i);
+    if(matchesRecurrence(base,candidate,r)) return candidate;
+  }
+  return null;
+}
+function getUpcomingImportantDates(limit){
+  return importantDates.map((item,index)=>({index,item:normaliseImportant(item),nextDate:nextOccurrenceForImportant(normaliseImportant(item))}))
+    .filter(x=>x.nextDate)
+    .sort((a,b)=>a.nextDate-b.nextDate)
+    .slice(0,limit);
+}
+
+function renderMonthly(el){
+  const y=cursor.getFullYear(),m=cursor.getMonth();
+  document.getElementById('period-label').textContent=`${MONTHS[m]} ${y}`;
+  const startDay=new Date(y,m,1).getDay();
+  let html=`<div class="cal-grid">`;
+  DAYS.forEach(d=>html+=`<div class="cal-header">${d}</div>`);
+  let day=new Date(y,m,1-startDay);
+  for(let i=0;i<42;i++){
+    const d=new Date(day);
+    const inMonth=d.getMonth()===m;
+    const isToday=isSameDay(d,today);
+    const isSel=isSameDay(d,selectedDate);
+    const tasks=getTaskOccurrences(d);
+    const appts=getApptOccurrences(d);
+    const imps=getImportantOccurrences(d);
+    const previewItems=getMonthlyPreviewItems(d,tasks,appts,imps);
+    let cls='cal-day'+(inMonth?'':' other-month')+(isToday?' today':'')+(isSel?' selected':'');
+    html+=`<div class="${cls}" onclick="openDayPreview(${d.getFullYear()},${d.getMonth()},${d.getDate()},event)"><div class="day-num">${d.getDate()}</div>`;
+    previewItems.slice(0,3).forEach(item=>html+=renderMonthChip(item));
+    if(previewItems.length>3) html+=`<div class="cal-chip more-chip">+${previewItems.length-3} more</div>`;
+    html+=`</div>`;
+    day.setDate(day.getDate()+1);
+  }
+  html+=`</div><div class="legend">
+    <span><span class="legend-dot" style="background:var(--acc)"></span>Task</span>
+    <span><span class="legend-dot" style="background:var(--grn)"></span>Appointment</span>
+    <span><span class="legend-dot" style="background:#D4537E"></span>Important date</span>
+  </div>`;
+  el.innerHTML=html;
+}
+function selectDay(y,m,d){selectedDate=new Date(y,m,d);cursor=new Date(y,m,d);switchView('daily')}
+function getMonthlyPreviewItems(d,tasks,appts,imps){
+  const items=[];
+  appts.forEach(o=>{
+    const a=o.item,c=APPT_COLORS[a.color??0];
+    items.push({type:'appointment',originDk:o.originDk,index:o.index,text:a.text,meta:`${fmtHour(a.startHour??9)} – ${fmtHour(a.endHour??10)}`,icon:a.icon||'ti-calendar-event',bg:c.bg,color:c.text});
+  });
+  imps.forEach(o=>{
+    const id=o.item,c=DATE_COLORS[id.color??2];
+    items.push({type:'important',importantIndex:o.index,text:id.title,meta:id.category||'Important date',icon:id.icon||'ti-star',bg:c.bg,color:c.text});
+  });
+  tasks.forEach(o=>{
+    const t=o.item,done=isTaskDone(t,o.occurrenceDk);
+    items.push({type:'task',originDk:o.originDk,index:o.index,occurrenceDk:o.occurrenceDk,text:t.text,meta:`${PRIORITY_LABELS[t.priority||'medium']} priority${t.deadline?' · '+(fmtDeadline(t.deadline)?.label||''):''}`,icon:done?'ti-check':'ti-checks',bg:'var(--acc-l)',color:'var(--acc-d)',done});
+  });
+  return items;
+}
+function renderMonthChip(item){
+  const chipClass=item.type==='task'?' task-chip':'';
+  const display=item.type==='appointment'?`${item.meta.split(' ')[0]} ${item.text}`:item.text;
+  return `<div class="cal-chip${chipClass}" style="background:${item.bg};color:${item.color}" title="${escHtml(item.text)}"><i class="ti ${item.icon}"></i><span style="overflow:hidden;text-overflow:ellipsis">${escHtml(display)}</span></div>`;
+}
+function openDayPreview(y,m,d,event){
+  if(event)event.stopPropagation();
+  const date=new Date(y,m,d);
+  selectedDate=new Date(date);
+  cursor=new Date(date);
+  const dk=key(date);
+  render();
+  const items=getMonthlyPreviewItems(date,getTaskOccurrences(date),getApptOccurrences(date),getImportantOccurrences(date));
+  const rows=items.map(item=>renderPreviewRow(item)).join('')||`<div class="empty-note" style="padding:12px">No items for this date yet.</div>`;
+  document.getElementById('modal-root').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
+    <h3><i class="ti ti-calendar-search"></i> ${DAYS[date.getDay()]}, ${MONTHS[date.getMonth()]} ${date.getDate()}</h3>
+    <div class="preview-date">Preview of tasks, appointments, and important dates for this day.</div>
+    <div class="preview-list">${rows}</div>
+    <div class="preview-actions">
+      <button class="tool-btn" onclick="closeModal();openTaskModal('${dk}')"><i class="ti ti-plus"></i> Task</button>
+      <button class="tool-btn" onclick="closeModal();openApptModal('${dk}')"><i class="ti ti-plus"></i> Appointment</button>
+      <button class="tool-btn" onclick="closeModal();openImportantModal()"><i class="ti ti-plus"></i> Important date</button>
+    </div>
+    <div class="modal-btns"><button class="btn-cancel" onclick="closeModal()">Close</button><button class="btn-primary" onclick="selectDay(${y},${m},${d})">View day</button></div>
+  </div></div>`;
+}
+function renderPreviewRow(item){
+  let onclick='';
+  if(item.type==='task') onclick=`openTaskModal('${item.originDk}',${item.index})`;
+  if(item.type==='appointment') onclick=`openApptModal('${item.originDk}',${item.index})`;
+  if(item.type==='important') onclick=`openImportantModal(${item.importantIndex})`;
+  const title=item.done?`<span class="item-text done">${escHtml(item.text)}</span>`:escHtml(item.text);
+  return `<div class="preview-row" onclick="${onclick}">
+    <div class="preview-icon" style="background:${item.bg};color:${item.color}"><i class="ti ${item.icon}"></i></div>
+    <div style="flex:1;min-width:0"><div class="item-main-text">${title}</div><div class="preview-meta"><span>${item.type==='task'?'Task':item.type==='appointment'?'Appointment':'Important date'}</span><span>·</span><span>${escHtml(item.meta||'')}</span></div></div>
+  </div>`;
+}
+
+function dateFromInputValue(value){
+  if(!value) return null;
+  const [y,m,d]=String(value).split('-').map(Number);
+  if(!y||!m||!d) return null;
+  return new Date(y,m-1,d);
+}
+function getWeeklyTaskOccurrences(d){
+  const out=[];
+  Object.keys(data).forEach(dk=>{
+    const base=parseKey(dk);
+    getDataByKey(dk).tasks.forEach((t,i)=>{
+      const due=t.deadline?dateFromInputValue(t.deadline):null;
+      const anchor=due||base;
+      if(matchesRecurrence(anchor,d,t.recurrence)) out.push({originDk:dk,index:i,item:t,occurrenceDk:key(d),baseDate:base,weeklyDate:anchor});
+    });
+  });
+  return out;
+}
+function renderWeeklyAllDayCell(d){
+  const tasks=getWeeklyTaskOccurrences(d);
+  const imps=getImportantOccurrences(d);
+  const items=[];
+  tasks.forEach(o=>items.push({kind:'task',originDk:o.originDk,index:o.index,occurrenceDk:o.occurrenceDk,item:o.item}));
+  imps.forEach(o=>items.push({kind:'important',index:o.index,item:o.item}));
+  const y=d.getFullYear(),m=d.getMonth(),day=d.getDate();
+  let html=`<div class="week-all-day-cell" onclick="openDayPreview(${y},${m},${day},event)">`;
+  items.slice(0,4).forEach(x=>{
+    if(x.kind==='task'){
+      const t=x.item,done=isTaskDone(t,x.occurrenceDk),label=`${PRIORITY_LABELS[t.priority||'medium']}: ${t.text}`;
+      html+=`<div class="week-chip week-task-chip" onclick="event.stopPropagation();openTaskModal('${x.originDk}',${x.index})" title="${escHtml(t.text)}"><i class="ti ${done?'ti-check':'ti-checks'}"></i><span>${escHtml(label)}</span></div>`;
+    }else{
+      const id=x.item,c=DATE_COLORS[id.color??2];
+      html+=`<div class="week-chip week-important-chip" onclick="event.stopPropagation();openImportantModal(${x.index})" style="background:${c.bg};color:${c.text}" title="${escHtml(id.title)}"><i class="ti ${id.icon||'ti-star'}"></i><span>${escHtml(id.title)}</span></div>`;
+    }
+  });
+  if(items.length>4) html+=`<div class="week-chip week-more-chip">+${items.length-4} more</div>`;
+  html+=`</div>`;
+  return html;
+}
+function renderWeekly(el){
+  const dow=cursor.getDay();
+  const weekStart=new Date(cursor);weekStart.setDate(cursor.getDate()-dow);
+  const weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
+  document.getElementById('period-label').textContent=`${MONTHS[weekStart.getMonth()].slice(0,3)} ${weekStart.getDate()} – ${MONTHS[weekEnd.getMonth()].slice(0,3)} ${weekEnd.getDate()}`;
+  const dayAppts=[];
+  for(let i=0;i<7;i++){const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);dayAppts.push(getApptOccurrences(d))}
+  let html=`<div class="week-wrap"><div class="week-grid"><div class="week-corner"></div>`;
+  for(let i=0;i<7;i++){
+    const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);
+    html+=`<div class="week-col-header${isSameDay(d,today)?' today-col':''}">${DAYS[i]}<span class="wday-num">${d.getDate()}</span></div>`;
+  }
+  html+=`<div class="week-all-day-label">All-day<br><span>Tasks</span></div>`;
+  for(let i=0;i<7;i++){
+    const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);
+    html+=renderWeeklyAllDayCell(d);
+  }
+  ALL_HOURS.forEach(hr=>{
+    html+=`<div class="time-label">${fmtHour(hr)}</div>`;
+    for(let i=0;i<7;i++){
+      const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);
+      const appts=dayAppts[i].filter(o=>(o.item.startHour??9)===hr);
+      html+=`<div class="week-cell" onclick="selectDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})">`;
+      appts.forEach((o,idx)=>{
+        const a=o.item,c=APPT_COLORS[a.color??0];
+        const span=Math.max(1,(a.endHour??hr+1)-hr);
+        const h=Math.max(16,44*span-4-idx*4);
+        html+=`<div class="week-event" onclick="event.stopPropagation();openApptModal('${o.originDk}',${o.index})" style="background:${c.bg};color:${c.text};top:${2+idx*14}px;height:${h}px;z-index:${2+idx}"><i class="ti ${a.icon||'ti-calendar-event'}"></i>${escHtml(a.text).slice(0,10)}</div>`;
+      });
+      html+=`</div>`;
+    }
+  });
+  html+=`</div></div>`;
+  el.innerHTML=html;
+}
+
+function renderDaily(el){
+  const d=selectedDate,dk=key(d);
+  document.getElementById('period-label').textContent=`${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
+  const tasks=getTaskOccurrences(d);
+  const appts=getApptOccurrences(d);
+  const imps=getImportantOccurrences(d);
+  el.innerHTML=`
+  <div class="daily-grid three-col">
+    <div class="section-card">
+      <div class="section-title"><i class="ti ti-checks"></i> Tasks</div>
+      ${renderTaskRows(tasks) || '<div class="empty-note">No tasks yet.</div>'}
+      <button class="add-btn" onclick="openTaskModal('${dk}')"><i class="ti ti-plus"></i> Add task</button>
+    </div>
+    <div class="section-card">
+      <div class="section-title"><i class="ti ti-calendar-event"></i> Appointments</div>
+      ${renderApptRows(appts) || '<div class="empty-note">No appointments yet.</div>'}
+      <button class="add-btn" onclick="openApptModal('${dk}')"><i class="ti ti-plus"></i> Add appointment</button>
+    </div>
+    <div class="section-card">
+      <div class="section-title"><i class="ti ti-star"></i> Important dates</div>
+      ${renderImportantRows(imps) || '<div class="empty-note">No important dates.</div>'}
+      <button class="add-btn" onclick="openImportantModal()"><i class="ti ti-plus"></i> Add date</button>
+    </div>
+  </div>`;
+}
+function renderTaskRows(tasks){
+  return tasks.map(o=>{
+    const t=o.item,done=isTaskDone(t,o.occurrenceDk),dl=t.deadline?fmtDeadline(t.deadline):null;
+    return `<div class="item-row" onclick="openTaskModal('${o.originDk}',${o.index})">
+      <div class="check${done?' done':''}" onclick="toggleTask('${o.originDk}',${o.index},'${o.occurrenceDk}',event)" role="checkbox" aria-checked="${done}">${done?'<i class="ti ti-check" style="font-size:10px"></i>':''}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          <span class="item-main-text item-text${done?' done':''}">${escHtml(t.text)}</span>
+          <span class="badge badge-${t.priority||'medium'}">${PRIORITY_LABELS[t.priority||'medium']}</span>
+          <span class="cat-badge">${escHtml(t.category||'Other')}</span>
+        </div>
+        <div class="meta-line">
+          ${dl?`<span class="deadline-text${dl.overdue?' overdue':''}">${dl.label}</span>`:''}
+          ${(t.recurrence&&t.recurrence!=='none')?`<span><i class="ti ti-repeat"></i> ${RECURRENCE_LABELS[t.recurrence]}</span>`:''}
+        </div>
+      </div>
+      <button class="delete-btn" onclick="deleteTask('${o.originDk}',${o.index},event)" title="Delete"><i class="ti ti-x"></i></button>
+    </div>`;
+  }).join('');
+}
+function renderApptRows(appts){
+  return appts.map(o=>{
+    const a=o.item,c=APPT_COLORS[a.color??0];
+    return `<div class="item-row" onclick="openApptModal('${o.originDk}',${o.index})">
+      <div class="appt-icon-dot" style="background:${c.bg};color:${c.text}"><i class="ti ${a.icon||'ti-calendar-event'}"></i></div>
+      <div style="flex:1;min-width:0">
+        <div class="item-main-text">${escHtml(a.text)}</div>
+        <div class="appt-time">${fmtHour(a.startHour??9)} – ${fmtHour(a.endHour??10)} <span class="cat-badge">${escHtml(a.category||'Other')}</span> ${(a.recurrence&&a.recurrence!=='none')?`<span><i class="ti ti-repeat"></i> ${RECURRENCE_LABELS[a.recurrence]}</span>`:''}</div>
+      </div>
+      <button class="delete-btn" onclick="deleteAppt('${o.originDk}',${o.index},event)" title="Delete"><i class="ti ti-x"></i></button>
+    </div>`;
+  }).join('');
+}
+function renderImportantRows(imps){
+  return imps.map(o=>{
+    const id=o.item,c=DATE_COLORS[id.color??2];
+    return `<div class="item-row" onclick="openImportantModal(${o.index})">
+      <div class="appt-icon-dot" style="background:${c.bg};color:${c.text}"><i class="ti ${id.icon||'ti-star'}"></i></div>
+      <div style="flex:1;min-width:0">
+        <div class="item-main-text">${escHtml(id.title)}</div>
+        <div class="appt-time">${escHtml(id.category||'Other')} ${(id.recurrence&&id.recurrence!=='none')?`<span><i class="ti ti-repeat"></i> ${RECURRENCE_LABELS[id.recurrence]}</span>`:''}</div>
+      </div>
+      <button class="delete-btn" onclick="deleteImportant(${o.index},event)" title="Delete"><i class="ti ti-x"></i></button>
+    </div>`;
+  }).join('');
+}
+function renderUpcomingDeadlineRows(items){
+  return items.map(o=>{
+    const t=o.item;
+    return `<div class="item-row" onclick="openTaskModal('${o.originDk}',${o.index})">
+      <i class="ti ti-flag" style="font-size:15px;color:var(--tx3);margin-top:2px"></i>
+      <div style="flex:1;min-width:0">
+        <div class="item-main-text">${escHtml(t.text)}</div>
+        <div class="appt-time">${fmtDate(o.deadlineDate)} <span class="badge badge-${t.priority||'medium'}">${PRIORITY_LABELS[t.priority||'medium']}</span> <span class="cat-badge">${escHtml(t.category||'Other')}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderUpcomingImportantRows(items){
+  return items.map(o=>{
+    const id=o.item,c=DATE_COLORS[id.color??2];
+    return `<div class="item-row" onclick="openImportantModal(${o.index})">
+      <div class="appt-icon-dot" style="background:${c.bg};color:${c.text}"><i class="ti ${id.icon||'ti-star'}"></i></div>
+      <div style="flex:1;min-width:0">
+        <div class="item-main-text">${escHtml(id.title)}</div>
+        <div class="appt-time">${fmtDate(o.nextDate)} · ${escHtml(id.category||'Other')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function closeModal(){document.getElementById('modal-root').innerHTML=''}
+function colorSwatches(colors,selectedIdx,onclickFn){return colors.map((c,i)=>`<div class="color-swatch${i===selectedIdx?' selected':''}" style="background:${c.dot}" onclick="${onclickFn}(${i})" title="${c.name}"></div>`).join('')}
+function iconPicker(icons,selectedIcon,onclickFn){return icons.map(ic=>`<div class="icon-opt${ic===selectedIcon?' selected':''}" onclick="${onclickFn}('${ic}')" title="${ic}"><i class="ti ${ic}"></i></div>`).join('')}
+function hoursOptions(selected){return ALL_HOURS.map(h=>`<option value="${h}"${h===selected?' selected':''}>${fmtHour(h)}</option>`).join('')}
+function categoryOptions(selected){return CATEGORIES.map(c=>`<option value="${c}"${c===selected?' selected':''}>${c}</option>`).join('')}
+function recurrenceOptions(selected){return RECURRENCES.map(r=>`<option value="${r}"${r===selected?' selected':''}>${RECURRENCE_LABELS[r]}</option>`).join('')}
+
+let _apptState={originDk:null,index:null,color:0,icon:'ti-calendar-event'};
+function openApptModal(dk,index=null){
+  const isEdit=index!==null&&index!==undefined;
+  const item=isEdit?getDataByKey(dk).appts[index]:null;
+  _apptState={originDk:dk,index:isEdit?index:null,color:item?.color??0,icon:item?.icon||'ti-calendar-event'};
+  const defaultDate=inputDateFromKey(dk);
+  document.getElementById('modal-root').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
+    <h3><i class="ti ti-calendar-event"></i> ${isEdit?'Edit appointment':'New appointment'}</h3>
+    <div class="form-row"><label>Title</label><input id="am-title" type="text" value="${escHtml(item?.text||'')}" placeholder="Appointment title…"></div>
+    <div class="form-row"><label>Date</label><input id="am-date" type="date" value="${defaultDate}"></div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin:0"><label>Start time</label><select id="am-start">${hoursOptions(item?.startHour??9)}</select></div>
+      <div class="form-row" style="margin:0"><label>End time</label><select id="am-end">${hoursOptions(item?.endHour??10)}</select></div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin:0"><label>Category</label><select id="am-category">${categoryOptions(item?.category||'Other')}</select></div>
+      <div class="form-row" style="margin:0"><label>Repeat</label><select id="am-recurrence">${recurrenceOptions(item?.recurrence||'none')}</select></div>
+    </div>
+    <div class="form-row"><label>Colour</label><div class="color-picker" id="am-colors">${colorSwatches(APPT_COLORS,_apptState.color,'setApptColor')}</div></div>
+    <div class="form-row"><label>Icon</label><div class="icon-picker" id="am-icons">${iconPicker(ICONS_APPT,_apptState.icon,'setApptIcon')}</div></div>
+    <div class="modal-btns"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveAppt()">Save</button></div>
+  </div></div>`;
+  document.getElementById('am-title').focus();
+}
+function setApptColor(i){_apptState.color=i;document.getElementById('am-colors').innerHTML=colorSwatches(APPT_COLORS,i,'setApptColor')}
+function setApptIcon(ic){_apptState.icon=ic;document.getElementById('am-icons').innerHTML=iconPicker(ICONS_APPT,ic,'setApptIcon')}
+function saveAppt(){
+  const title=document.getElementById('am-title').value.trim();
+  if(!title)return;
+  const dateVal=document.getElementById('am-date').value;
+  let start=parseInt(document.getElementById('am-start').value),end=parseInt(document.getElementById('am-end').value);
+  if(end<=start) end=start+1;
+  const [y,m,d]=dateVal.split('-').map(Number);
+  const targetDk=keyStr(y,m-1,d);
+  const appt={text:title,startHour:start,endHour:Math.min(end,HOUR_END),color:_apptState.color,icon:_apptState.icon,category:document.getElementById('am-category').value,recurrence:document.getElementById('am-recurrence').value};
+  if(_apptState.index!==null){
+    getDataByKey(_apptState.originDk).appts.splice(_apptState.index,1);
+  }
+  getDataByKey(targetDk).appts.push(appt);
+  saveData();closeModal();render();
+}
+
+let _taskState={originDk:null,index:null};
+function openTaskModal(dk,index=null){
+  const isEdit=index!==null&&index!==undefined;
+  const item=isEdit?getDataByKey(dk).tasks[index]:null;
+  _taskState={originDk:dk,index:isEdit?index:null};
+  const defaultDate=inputDateFromKey(dk);
+  document.getElementById('modal-root').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
+    <h3><i class="ti ti-checks"></i> ${isEdit?'Edit task':'New task'}</h3>
+    <div class="form-row"><label>Task</label><input id="tm-title" type="text" value="${escHtml(item?.text||'')}" placeholder="What needs to be done…"></div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin:0"><label>Task date</label><input id="tm-date" type="date" value="${defaultDate}"></div>
+      <div class="form-row" style="margin:0"><label>Deadline</label><input id="tm-deadline" type="date" value="${escHtml(item?.deadline||'')}"></div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin:0"><label>Priority</label><select id="tm-priority"><option value="high"${(item?.priority||'medium')==='high'?' selected':''}>High</option><option value="medium"${(item?.priority||'medium')==='medium'?' selected':''}>Medium</option><option value="low"${(item?.priority||'medium')==='low'?' selected':''}>Low</option></select></div>
+      <div class="form-row" style="margin:0"><label>Category</label><select id="tm-category">${categoryOptions(item?.category||'Other')}</select></div>
+    </div>
+    <div class="form-row"><label>Repeat</label><select id="tm-recurrence">${recurrenceOptions(item?.recurrence||'none')}</select></div>
+    <div class="modal-btns"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveTask()">Save</button></div>
+  </div></div>`;
+  document.getElementById('tm-title').focus();
+}
+function saveTask(){
+  const title=document.getElementById('tm-title').value.trim();
+  if(!title)return;
+  const dateVal=document.getElementById('tm-date').value;
+  const [y,m,d]=dateVal.split('-').map(Number);
+  const targetDk=keyStr(y,m-1,d);
+  let old={done:false,doneDates:{}};
+  if(_taskState.index!==null){
+    old=getDataByKey(_taskState.originDk).tasks[_taskState.index]||old;
+    getDataByKey(_taskState.originDk).tasks.splice(_taskState.index,1);
+  }
+  const task={text:title,done:old.done??false,doneDates:old.doneDates||{},priority:document.getElementById('tm-priority').value,deadline:document.getElementById('tm-deadline').value||'',category:document.getElementById('tm-category').value,recurrence:document.getElementById('tm-recurrence').value};
+  getDataByKey(targetDk).tasks.push(task);
+  saveData();closeModal();render();
+}
+
+let _impState={index:null,color:2,icon:'ti-star'};
+function openImportantModal(index=null){
+  const isEdit=index!==null&&index!==undefined;
+  const item=isEdit?normaliseImportant(importantDates[index]):null;
+  _impState={index:isEdit?index:null,color:item?.color??2,icon:item?.icon||'ti-star'};
+  document.getElementById('modal-root').innerHTML=`
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
+    <h3><i class="ti ti-star"></i> ${isEdit?'Edit important date':'New important date'}</h3>
+    <div class="form-row"><label>Title</label><input id="im-title" type="text" value="${escHtml(item?.title||'')}" placeholder="e.g. Mia's birthday…"></div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin:0"><label>Date</label><input id="im-date" type="date" value="${escHtml(item?.date||'')}"></div>
+      <div class="form-row" style="margin:0"><label>Category</label><select id="im-cat">${['Birthday','Anniversary','School event','Reminder','Holiday','Other'].map(c=>`<option value="${c}"${(item?.category||'Birthday')===c?' selected':''}>${c}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-row"><label>Repeat</label><select id="im-recurrence">${recurrenceOptions(item?.recurrence||'yearly')}</select></div>
+    <div class="form-row"><label>Colour</label><div class="color-picker" id="im-colors">${colorSwatches(DATE_COLORS,_impState.color,'setImpColor')}</div></div>
+    <div class="form-row"><label>Icon</label><div class="icon-picker" id="im-icons">${iconPicker(ICONS_DATE,_impState.icon,'setImpIcon')}</div></div>
+    <div class="modal-btns"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveImportant()">Save</button></div>
+  </div></div>`;
+  document.getElementById('im-title').focus();
+}
+function setImpColor(i){_impState.color=i;document.getElementById('im-colors').innerHTML=colorSwatches(DATE_COLORS,i,'setImpColor')}
+function setImpIcon(ic){_impState.icon=ic;document.getElementById('im-icons').innerHTML=iconPicker(ICONS_DATE,ic,'setImpIcon')}
+function saveImportant(){
+  const title=document.getElementById('im-title').value.trim();
+  const date=document.getElementById('im-date').value;
+  if(!title||!date)return;
+  const item={title,date,category:document.getElementById('im-cat').value,color:_impState.color,icon:_impState.icon,recurrence:document.getElementById('im-recurrence').value};
+  if(_impState.index!==null) importantDates[_impState.index]=item;
+  else importantDates.push(item);
+  saveImportantData();closeModal();render();
+}
+
+function toggleTask(originDk,index,occurrenceDk,event){
+  if(event)event.stopPropagation();
+  const t=getDataByKey(originDk).tasks[index];
+  if(!t)return;
+  if((t.recurrence||'none')==='none') t.done=!t.done;
+  else{t.doneDates=t.doneDates||{};t.doneDates[occurrenceDk]=!t.doneDates[occurrenceDk]}
+  saveData();render();
+}
+function deleteTask(dk,index,event){if(event)event.stopPropagation();if(!confirm('Delete this task?'))return;getDataByKey(dk).tasks.splice(index,1);saveData();render()}
+function deleteAppt(dk,index,event){if(event)event.stopPropagation();if(!confirm('Delete this appointment?'))return;getDataByKey(dk).appts.splice(index,1);saveData();render()}
+function deleteImportant(index,event){if(event)event.stopPropagation();if(!confirm('Delete this important date?'))return;importantDates.splice(index,1);saveImportantData();render()}
+
+function exportPlanner(){
+  const payload={version:2,exportedAt:new Date().toISOString(),data,importantDates};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`digital-planner-backup-${toInputDate(today)}.json`;
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+function importPlanner(event){
+  const file=event.target.files&&event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const imported=JSON.parse(e.target.result);
+      if(!confirm('Importing will replace your current planner data. Continue?'))return;
+      data=imported.data||{};
+      importantDates=imported.importantDates||imported.important||[];
+      migrateAll();
+      render();
+    }catch(err){alert('Could not import this file. Please use a valid planner JSON backup.')}
+  };
+  reader.readAsText(file);
+  event.target.value='';
+}
+function clearPlannerData(){
+  if(!confirm('This will permanently clear all planner data in this browser. Continue?'))return;
+  data={};importantDates=[];saveData();saveImportantData();render();
+}
+
+render();
+</script>
+</body>
+</html>

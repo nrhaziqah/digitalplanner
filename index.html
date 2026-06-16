@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>heartfaeries — Digital Planner</title>
+<title>Haziqah HQ — Digital Planner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -714,13 +714,96 @@ body{
   .cal-day{min-height:82px;padding:6px}
 }
 
+
+
+/* ── LOCKED LIGHT LUXE PALETTE ────────────────────────────────
+   Keeps the planner on this exact colour scheme on every device.
+   This intentionally overrides any browser/device dark-mode setting. */
+:root{
+  --ink:#17131A;
+  --ink2:#5E5666;
+  --ink3:#9B92A3;
+  --cream:#FFFCF8;
+  --cream2:#F6F0EA;
+  --cream3:#EDE4DB;
+  --border:rgba(23,19,26,0.09);
+  --border2:rgba(23,19,26,0.16);
+  --gold:#BFA46F;
+  --gold-l:#F7EFD9;
+  --gold-d:#765E2E;
+  --plum:#7B5C88;
+  --plum-l:#F2EAF5;
+  --plum-d:#4B3158;
+  --rose:#C98B95;
+  --rose-l:#FAECEE;
+  --rose-d:#7D3E48;
+  --sage:#7F9B89;
+  --sage-l:#E9F1EC;
+  --sage-d:#365F46;
+  color-scheme:light;
+}
+body{
+  background:
+    radial-gradient(circle at top left, rgba(191,164,111,.22), transparent 30%),
+    radial-gradient(circle at top right, rgba(123,92,136,.18), transparent 32%),
+    linear-gradient(135deg,#F9F3EE 0%,#F4ECE7 46%,#EFE7DF 100%) !important;
+  color:var(--ink) !important;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --ink:#17131A;
+    --ink2:#5E5666;
+    --ink3:#9B92A3;
+    --cream:#FFFCF8;
+    --cream2:#F6F0EA;
+    --cream3:#EDE4DB;
+    --border:rgba(23,19,26,0.09);
+    --border2:rgba(23,19,26,0.16);
+    --gold:#BFA46F;
+    --gold-l:#F7EFD9;
+    --gold-d:#765E2E;
+    --plum:#7B5C88;
+    --plum-l:#F2EAF5;
+    --plum-d:#4B3158;
+    --rose:#C98B95;
+    --rose-l:#FAECEE;
+    --rose-d:#7D3E48;
+    --sage:#7F9B89;
+    --sage-l:#E9F1EC;
+    --sage-d:#365F46;
+    color-scheme:light;
+  }
+  body{
+    background:
+      radial-gradient(circle at top left, rgba(191,164,111,.22), transparent 30%),
+      radial-gradient(circle at top right, rgba(123,92,136,.18), transparent 32%),
+      linear-gradient(135deg,#F9F3EE 0%,#F4ECE7 46%,#EFE7DF 100%) !important;
+    color:var(--ink) !important;
+  }
+}
+.task-notes-line{
+  margin-top:6px;
+  font-size:11px;
+  line-height:1.45;
+  color:var(--ink2);
+  background:rgba(255,252,248,.64);
+  border:0.5px solid var(--border);
+  border-radius:10px;
+  padding:6px 8px;
+  display:flex;
+  gap:6px;
+  align-items:flex-start;
+  white-space:pre-wrap;
+}
+.task-notes-line i{font-size:12px;color:var(--gold);margin-top:2px;flex-shrink:0}
+
 </style>
 </head>
 <body>
 
 <div style="width:100%;max-width:980px;margin:0 auto">
 <nav class="nav">
-  <div class="nav-brand">heartfaeries</div>
+  <div class="nav-brand">Haziqah HQ</div>
   <div class="tabs anchor-tabs" aria-label="Page sections">
     <button class="tab active" onclick="scrollToSection('today-section')"><i class="ti ti-layout-dashboard" style="font-size:10px"></i> Today</button>
     <button class="tab" onclick="scrollToSection('month-section')">Month</button>
@@ -995,8 +1078,8 @@ function fmtHour(h){if(h===12)return'12pm';return h>12?(h-12)+'pm':h+'am'}
 function fmtDate(d){return`${MONTHS[d.getMonth()].slice(0,3)} ${d.getDate()}, ${d.getFullYear()}`}
 function normaliseRecurrence(r,def='none'){return RECURRENCES.includes(r)?r:def}
 
-function normaliseTask(t){return{text:t?.text||'',done:t?.done??false,doneDates:t?.doneDates||{},priority:t?.priority||'medium',deadline:t?.deadline||'',color:t?.color??0,recurrence:normaliseRecurrence(t?.recurrence,'none'),category:CATEGORIES.includes(t?.category)?t.category:'Other'}}
-function normaliseAppt(a){const start=a?.startHour??a?.hour??9;let end=a?.endHour??start+1;if(end<=start)end=start+1;return{text:a?.text||'',startHour:start,endHour:Math.min(end,HOUR_END),color:a?.color??0,icon:a?.icon||'ti-calendar-event',recurrence:normaliseRecurrence(a?.recurrence,'none'),category:CATEGORIES.includes(a?.category)?a.category:'Other'}}
+function normaliseTask(t){return{text:t?.text||'',notes:t?.notes||'',done:t?.done??false,doneDates:t?.doneDates||{},priority:t?.priority||'medium',deadline:t?.deadline||'',color:t?.color??0,recurrence:normaliseRecurrence(t?.recurrence,'none'),category:CATEGORIES.includes(t?.category)?t.category:'Work'}}
+function normaliseAppt(a){const start=a?.startHour??a?.hour??9;let end=a?.endHour??start+1;if(end<=start)end=start+1;return{text:a?.text||'',startHour:start,endHour:Math.min(end,HOUR_END),color:a?.color??0,icon:a?.icon||'ti-calendar-event',recurrence:normaliseRecurrence(a?.recurrence,'none'),category:CATEGORIES.includes(a?.category)?a.category:'Work'}}
 function normaliseImportant(i){return{title:i?.title||'',date:i?.date||'',category:i?.category||'Other',color:i?.color??2,icon:i?.icon||'ti-star',recurrence:normaliseRecurrence(i?.recurrence,'yearly')}}
 function getDataByKey(dk){if(!data[dk])data[dk]={tasks:[],appts:[]};data[dk].tasks=(data[dk].tasks||[]).map(normaliseTask);data[dk].appts=(data[dk].appts||[]).map(normaliseAppt);return data[dk]}
 function getData(d){return getDataByKey(key(d))}
@@ -1201,8 +1284,9 @@ function renderTaskRows(tasks){
       <div class="check${done?' done':''}" onclick="toggleTask('${o.originDk}',${o.index},'${o.occurrenceDk}',event)">${done?'<i class="ti ti-check" style="font-size:10px"></i>':''}</div>
       <div class="task-color-dot" style="background:${c.bg};color:${c.text}"><i class="ti ti-tag"></i></div>
       <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"><span class="item-main-text item-text${done?' done':''}">${escHtml(t.text)}</span><span class="badge badge-${t.priority||'medium'}">${PRIORITY_LABELS[t.priority||'medium']}</span><span class="cat-badge">${escHtml(t.category||'Other')}</span></div>
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"><span class="item-main-text item-text${done?' done':''}">${escHtml(t.text)}</span><span class="badge badge-${t.priority||'medium'}">${PRIORITY_LABELS[t.priority||'medium']}</span><span class="cat-badge">${escHtml(t.category||'Work')}</span></div>
         <div class="meta-line">${dl?`<span class="deadline-text${dl.overdue?' overdue':''}">${dl.label}</span>`:''} ${(t.recurrence&&t.recurrence!=='none')?`<span class="badge-recur"><i class="ti ti-repeat" style="font-size:9px"></i> ${RECURRENCE_LABELS[t.recurrence]}</span>`:''}</div>
+        ${t.notes?`<div class="task-notes-line"><i class="ti ti-notes"></i> ${escHtml(t.notes)}</div>`:''}
       </div>
       <button class="delete-btn" onclick="deleteTask('${o.originDk}',${o.index},event)"><i class="ti ti-x"></i></button>
     </div>`;
@@ -1215,7 +1299,7 @@ function renderApptRows(appts){
       <div class="appt-icon-dot" style="background:${c.bg};color:${c.text}"><i class="ti ${a.icon||'ti-calendar-event'}"></i></div>
       <div style="flex:1;min-width:0">
         <div class="item-main-text">${escHtml(a.text)}</div>
-        <div class="appt-time">${fmtHour(a.startHour??9)} – ${fmtHour(a.endHour??10)} <span class="cat-badge">${escHtml(a.category||'Other')}</span> ${(a.recurrence&&a.recurrence!=='none')?`<span class="badge-recur"><i class="ti ti-repeat" style="font-size:9px"></i> ${RECURRENCE_LABELS[a.recurrence]}</span>`:''}</div>
+        <div class="appt-time">${fmtHour(a.startHour??9)} – ${fmtHour(a.endHour??10)} <span class="cat-badge">${escHtml(a.category||'Work')}</span> ${(a.recurrence&&a.recurrence!=='none')?`<span class="badge-recur"><i class="ti ti-repeat" style="font-size:9px"></i> ${RECURRENCE_LABELS[a.recurrence]}</span>`:''}</div>
       </div>
       <button class="delete-btn" onclick="deleteAppt('${o.originDk}',${o.index},event)"><i class="ti ti-x"></i></button>
     </div>`;
@@ -1287,7 +1371,7 @@ function openApptModal(dk,index=null){
       <div class="form-row" style="margin:0"><label>End time</label><select id="am-end">${hoursOptions(item?.endHour??10)}</select></div>
     </div>
     <div class="form-row-2">
-      <div class="form-row" style="margin:0"><label>Category</label><select id="am-category">${categoryOptions(item?.category||'Other')}</select></div>
+      <div class="form-row" style="margin:0"><label>Category</label><select id="am-category">${categoryOptions(item?.category||'Work')}</select></div>
       <div class="form-row" style="margin:0"><label>Repeat</label><select id="am-recurrence">${recurrenceOptions(item?.recurrence||'none')}</select></div>
     </div>
     <div class="form-row"><label>Colour</label><div class="color-picker" id="am-colors">${colorSwatches(APPT_COLORS,_apptState.color,'setApptColor')}</div></div>
@@ -1320,13 +1404,14 @@ function openTaskModal(dk,index=null){
   el('modal-root').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal">
     <h3><i class="ti ti-checks"></i> ${isEdit?'Edit task':'New task'}</h3>
     <div class="form-row"><label>Task</label><input id="tm-title" type="text" value="${escHtml(item?.text||'')}" placeholder="What needs to be done…"></div>
+    <div class="form-row"><label>Notes</label><textarea id="tm-notes" rows="3" placeholder="Add more details, links, context, or reminders…">${escHtml(item?.notes||'')}</textarea></div>
     <div class="form-row-2">
       <div class="form-row" style="margin:0"><label>Task date</label><input id="tm-date" type="date" value="${inputDateFromKey(dk)}"></div>
       <div class="form-row" style="margin:0"><label>Deadline</label><input id="tm-deadline" type="date" value="${escHtml(item?.deadline||'')}"></div>
     </div>
     <div class="form-row-2">
       <div class="form-row" style="margin:0"><label>Priority</label><select id="tm-priority"><option value="high"${(item?.priority||'medium')==='high'?' selected':''}>High</option><option value="medium"${(item?.priority||'medium')==='medium'?' selected':''}>Medium</option><option value="low"${(item?.priority||'medium')==='low'?' selected':''}>Low</option></select></div>
-      <div class="form-row" style="margin:0"><label>Category</label><select id="tm-category">${categoryOptions(item?.category||'Other')}</select></div>
+      <div class="form-row" style="margin:0"><label>Category</label><select id="tm-category">${categoryOptions(item?.category||'Work')}</select></div>
     </div>
     <div class="form-row"><label>Repeat</label><select id="tm-recurrence">${recurrenceOptions(item?.recurrence||'none')}</select></div>
     <div class="form-row"><label>Colour</label><div class="color-picker" id="tm-colors">${colorSwatches(TASK_COLORS,_taskState.color,'setTaskColor')}</div></div>
@@ -1342,7 +1427,7 @@ function saveTask(){
   const targetDk=keyStr(y,m-1,d);
   let old={done:false,doneDates:{}};
   if(_taskState.index!==null){old=getDataByKey(_taskState.originDk).tasks[_taskState.index]||old;getDataByKey(_taskState.originDk).tasks.splice(_taskState.index,1)}
-  getDataByKey(targetDk).tasks.push({text:title,done:old.done??false,doneDates:old.doneDates||{},priority:el('tm-priority').value,deadline:el('tm-deadline').value||'',category:el('tm-category').value,recurrence:el('tm-recurrence').value,color:_taskState.color});
+  getDataByKey(targetDk).tasks.push({text:title,notes:el('tm-notes').value.trim(),done:old.done??false,doneDates:old.doneDates||{},priority:el('tm-priority').value,deadline:el('tm-deadline').value||'',category:el('tm-category').value,recurrence:el('tm-recurrence').value,color:_taskState.color});
   saveData();closeModal();render();
 }
 

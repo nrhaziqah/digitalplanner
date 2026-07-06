@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>heartfaeries — Digital Planner</title>
+<!-- Updated: optional time fields for tasks, meeting minutes, and important dates -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -347,6 +348,171 @@ function deleteTask(dk,index,event){if(event)event.stopPropagation();if(!confirm
 function exportPlanner(){const payload={version:3,exportedAt:new Date().toISOString(),data,importantDates};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`planner-backup-${toInputDate(today)}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
 function importPlanner(event){const file=event.target.files&&event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{try{const imported=JSON.parse(e.target.result);if(!confirm('Import will replace your current data. Continue?'))return;data=imported.data||{};importantDates=imported.importantDates||imported.important||[];migrateAll();render()}catch{alert('Could not read this file. Use a valid planner JSON backup.')}};reader.readAsText(file);event.target.value=''}
 function clearPlannerData(){if(!confirm('This will permanently clear all planner data. Continue?'))return;data={};importantDates=[];saveData();saveImportantData();render()}
+
+/* ── OPTIONAL TIME FIELDS FOR TASKS, MEETING MINUTES & IMPORTANT DATES ───── */
+function normaliseOptionalHour(v){
+  if(v===null||v===undefined||v==='')return null;
+  const n=parseInt(v,10);
+  return Number.isFinite(n)?n:null;
+}
+function normaliseTimePair(start,end){
+  const s=normaliseOptionalHour(start);
+  if(s===null)return{startHour:null,endHour:null};
+  let e=normaliseOptionalHour(end);
+  if(e===null||e<=s)e=s+1;
+  return{startHour:s,endHour:Math.min(e,HOUR_END)};
+}
+function hasTime(item){return normaliseOptionalHour(item?.startHour)!==null}
+function timeRangeLabel(item){
+  if(!hasTime(item))return '';
+  const s=normaliseOptionalHour(item.startHour);
+  const e=normaliseOptionalHour(item.endHour);
+  return `${fmtHour(s)}${e!==null&&e>s?' – '+fmtHour(e):''}`;
+}
+function hoursOptionsOptional(selected,blankLabel='No time'){
+  const sel=normaliseOptionalHour(selected);
+  return `<option value=""${sel===null?' selected':''}>${blankLabel}</option>`+ALL_HOURS.map(h=>`<option value="${h}"${h===sel?' selected':''}>${fmtHour(h)}</option>`).join('');
+}
+function timedMetaBadge(item){
+  const label=timeRangeLabel(item);
+  return label?`<span class="badge-recur"><i class="ti ti-clock" style="font-size:9px"></i> ${label}</span>`:'';
+}
+
+/* Override normalisers so older saved data still works, while new entries can store time. */
+function normaliseTask(t){
+  const tm=normaliseTimePair(t?.startHour,t?.endHour);
+  return{text:t?.text||'',notes:t?.notes||'',done:t?.done??false,doneDates:t?.doneDates||{},priority:t?.priority||'medium',deadline:t?.deadline||'',color:t?.color??0,recurrence:normaliseRecurrence(t?.recurrence,'none'),category:CATEGORIES.includes(t?.category)?t.category:'Work',startHour:tm.startHour,endHour:tm.endHour}
+}
+function normaliseImportant(i){
+  const tm=normaliseTimePair(i?.startHour,i?.endHour);
+  return{title:i?.title||'',date:i?.date||'',category:i?.category||'Other',color:i?.color??2,icon:i?.icon||'ti-star',recurrence:normaliseRecurrence(i?.recurrence,'yearly'),startHour:tm.startHour,endHour:tm.endHour}
+}
+function normaliseMeeting(m){
+  const tm=normaliseTimePair(m?.startHour,m?.endHour);
+  return{title:m?.title||'',notes:m?.notes||'',category:CATEGORIES.includes(m?.category)?m.category:'Work',color:MEETING_COLOR_INDEX,createdAt:m?.createdAt||new Date().toISOString(),startHour:tm.startHour,endHour:tm.endHour}
+}
+
+/* Override draft capture/restore so unsaved optional times are protected too. */
+function draftFromCurrentModal(){
+  if(!_currentModalDraft)return null;
+  const type=_currentModalDraft.type;
+  if(type==='task')return{type,originDk:_taskState.originDk,savedAt:new Date().toISOString(),state:{title:el('tm-title')?.value||'',notes:el('tm-notes')?.value||'',date:el('tm-date')?.value||'',deadline:el('tm-deadline')?.value||'',startHour:el('tm-start')?.value||'',endHour:el('tm-end')?.value||'',priority:el('tm-priority')?.value||'medium',category:el('tm-category')?.value||'Work',recurrence:el('tm-recurrence')?.value||'none',color:_taskState.color??0}};
+  if(type==='appointment')return{type,originDk:_apptState.originDk,savedAt:new Date().toISOString(),state:{title:el('am-title')?.value||'',date:el('am-date')?.value||'',startHour:el('am-start')?.value||'9',endHour:el('am-end')?.value||'10',category:el('am-category')?.value||'Work',recurrence:el('am-recurrence')?.value||'none',color:_apptState.color??0,icon:_apptState.icon||'ti-calendar-event'}};
+  if(type==='meeting')return{type,originDk:_meetingState.originDk,savedAt:new Date().toISOString(),state:{title:el('mm-title')?.value||'',date:el('mm-date')?.value||'',startHour:el('mm-start')?.value||'',endHour:el('mm-end')?.value||'',category:el('mm-category')?.value||'Work',notes:el('mm-notes')?.value||'',color:MEETING_COLOR_INDEX}};
+  if(type==='important')return{type,originDk:null,savedAt:new Date().toISOString(),state:{title:el('im-title')?.value||'',date:el('im-date')?.value||'',startHour:el('im-start')?.value||'',endHour:el('im-end')?.value||'',category:el('im-cat')?.value||'Birthday',recurrence:el('im-recurrence')?.value||'yearly',color:_impState.color??2,icon:_impState.icon||'ti-star'}};
+  return null;
+}
+function restoreModalDraft(){
+  const draft=loadModalDraft();if(!draft||!draftHasContent(draft))return;
+  const st=draft.state||{};
+  if(draft.type==='task'){
+    openTaskModal(dkFromInputDate(st.date,draft.originDk||key(today)));setFieldValue('tm-title',st.title);setFieldValue('tm-notes',st.notes);setFieldValue('tm-date',st.date);setFieldValue('tm-deadline',st.deadline);setFieldValue('tm-start',st.startHour);setFieldValue('tm-end',st.endHour);setFieldValue('tm-priority',st.priority||'medium');setFieldValue('tm-category',st.category||'Work');setFieldValue('tm-recurrence',st.recurrence||'none');_taskState.color=Number(st.color??0);if(el('tm-colors'))el('tm-colors').innerHTML=colorSwatches(TASK_COLORS,_taskState.color,'setTaskColor');
+  }else if(draft.type==='appointment'){
+    openApptModal(dkFromInputDate(st.date,draft.originDk||key(today)));setFieldValue('am-title',st.title);setFieldValue('am-date',st.date);setFieldValue('am-start',st.startHour||9);setFieldValue('am-end',st.endHour||10);setFieldValue('am-category',st.category||'Work');setFieldValue('am-recurrence',st.recurrence||'none');_apptState.color=Number(st.color??0);_apptState.icon=st.icon||'ti-calendar-event';if(el('am-colors'))el('am-colors').innerHTML=colorSwatches(APPT_COLORS,_apptState.color,'setApptColor');if(el('am-icons'))el('am-icons').innerHTML=iconPickerHtml(ICONS_APPT,_apptState.icon,'setApptIcon');
+  }else if(draft.type==='meeting'){
+    openMeetingModal(dkFromInputDate(st.date,draft.originDk||key(today)));setFieldValue('mm-title',st.title);setFieldValue('mm-date',st.date);setFieldValue('mm-start',st.startHour);setFieldValue('mm-end',st.endHour);setFieldValue('mm-category',st.category||'Work');setFieldValue('mm-notes',st.notes);
+  }else if(draft.type==='important'){
+    openImportantModal();setFieldValue('im-title',st.title);setFieldValue('im-date',st.date);setFieldValue('im-start',st.startHour);setFieldValue('im-end',st.endHour);setFieldValue('im-cat',st.category||'Birthday');setFieldValue('im-recurrence',st.recurrence||'yearly');_impState.color=Number(st.color??2);_impState.icon=st.icon||'ti-star';if(el('im-colors'))el('im-colors').innerHTML=colorSwatches(DATE_COLORS,_impState.color,'setImpColor');if(el('im-icons'))el('im-icons').innerHTML=iconPickerHtml(ICONS_DATE,_impState.icon,'setImpIcon');
+  }
+  saveCurrentModalDraft();
+}
+
+/* Override monthly preview so timed inclusions show their time. */
+function getMonthlyPreviewItems(d,tasks,appts,imps,meetings){
+  const items=[];
+  appts.forEach(o=>{const a=o.item,c=APPT_COLORS[a.color??0];items.push({type:'appointment',originDk:o.originDk,index:o.index,text:a.text,meta:`${fmtHour(a.startHour??9)}`,icon:a.icon||'ti-calendar-event',bg:c.bg,color:c.text})});
+  meetings.forEach(o=>{const m=o.item,c=APPT_COLORS[MEETING_COLOR_INDEX];items.push({type:'meeting',originDk:o.originDk,index:o.index,text:m.title,meta:timeRangeLabel(m)||'Meeting minutes',icon:'ti-notebook',bg:c.bg,color:c.text})});
+  imps.forEach(o=>{const id=o.item,c=DATE_COLORS[id.color??2];items.push({type:'important',importantIndex:o.index,text:id.title,meta:timeRangeLabel(id)||id.category||'',icon:id.icon||'ti-star',bg:c.bg,color:c.text})});
+  tasks.forEach(o=>{const t=o.item,done=isTaskDone(t,o.occurrenceDk),c=TASK_COLORS[t.color??0]||TASK_COLORS[0];items.push({type:'task',originDk:o.originDk,index:o.index,occurrenceDk:o.occurrenceDk,text:t.text,meta:timeRangeLabel(t)||PRIORITY_LABELS[t.priority||'medium'],icon:done?'ti-check':'ti-checks',bg:c.bg,color:c.text,done})});
+  return items;
+}
+
+/* Timed weekly inclusions share the hourly calendar grid with appointments. */
+function getWeeklyTaskOccurrences(d){
+  const out=[];Object.keys(data).forEach(dk=>{if(!/^\d{4}-\d{1,2}-\d{1,2}$/.test(dk))return;const base=parseKey(dk);getDataByKey(dk).tasks.forEach((t,i)=>{const due=t.deadline?dateFromInputValue(t.deadline):null;const anchor=hasTime(t)?base:(due||base);if(matchesRecurrence(anchor,d,t.recurrence))out.push({originDk:dk,index:i,item:t,occurrenceDk:key(d),baseDate:base,weeklyDate:anchor})})});return out;
+}
+function getTimedWeeklyItems(d){
+  const items=[];
+  getApptOccurrences(d).filter(o=>hasTime(o.item)).forEach(o=>items.push({kind:'appointment',originDk:o.originDk,index:o.index,item:o.item,title:o.item.text,icon:o.item.icon||'ti-calendar-event',color:APPT_COLORS[o.item.color??0],startHour:o.item.startHour,endHour:o.item.endHour}));
+  getTaskOccurrences(d).filter(o=>hasTime(o.item)).forEach(o=>items.push({kind:'task',originDk:o.originDk,index:o.index,occurrenceDk:o.occurrenceDk,item:o.item,title:o.item.text,icon:isTaskDone(o.item,o.occurrenceDk)?'ti-check':'ti-checks',color:TASK_COLORS[o.item.color??0]||TASK_COLORS[0],startHour:o.item.startHour,endHour:o.item.endHour}));
+  getMeetingOccurrences(d).filter(o=>hasTime(o.item)).forEach(o=>items.push({kind:'meeting',originDk:o.originDk,index:o.index,item:o.item,title:o.item.title,icon:'ti-notebook',color:APPT_COLORS[MEETING_COLOR_INDEX],startHour:o.item.startHour,endHour:o.item.endHour}));
+  getImportantOccurrences(d).filter(o=>hasTime(o.item)).forEach(o=>items.push({kind:'important',index:o.index,item:o.item,title:o.item.title,icon:o.item.icon||'ti-star',color:DATE_COLORS[o.item.color??2],startHour:o.item.startHour,endHour:o.item.endHour}));
+  return items.sort((a,b)=>(a.startHour??0)-(b.startHour??0));
+}
+function timedWeeklyItemClick(item){
+  if(item.kind==='appointment')return `openApptModal('${item.originDk}',${item.index})`;
+  if(item.kind==='task')return `openTaskModal('${item.originDk}',${item.index})`;
+  if(item.kind==='meeting')return `openMeetingModal('${item.originDk}',${item.index})`;
+  if(item.kind==='important')return `openImportantModal(${item.index})`;
+  return '';
+}
+function renderWeeklyAllDayCell(d){
+  const tasks=getWeeklyTaskOccurrences(d).filter(o=>!hasTime(o.item)),imps=getImportantOccurrences(d).filter(o=>!hasTime(o.item)),meetings=getMeetingOccurrences(d).filter(o=>!hasTime(o.item));
+  const items=[];tasks.forEach(o=>items.push({kind:'task',originDk:o.originDk,index:o.index,occurrenceDk:o.occurrenceDk,item:o.item}));meetings.forEach(o=>items.push({kind:'meeting',originDk:o.originDk,index:o.index,item:o.item}));imps.forEach(o=>items.push({kind:'important',index:o.index,item:o.item}));
+  const y=d.getFullYear(),m=d.getMonth(),day=d.getDate();let html=`<div class="week-all-day-cell" onclick="openDayPreview(${y},${m},${day},event)">`;
+  items.slice(0,4).forEach(x=>{if(x.kind==='task'){const t=x.item,done=isTaskDone(t,x.occurrenceDk),c=TASK_COLORS[t.color??0]||TASK_COLORS[0];html+=`<div class="week-chip" onclick="event.stopPropagation();openTaskModal('${x.originDk}',${x.index})" style="background:${c.bg};color:${c.text}" title="${escHtml(t.text)}"><i class="ti ${done?'ti-check':'ti-checks'}"></i><span>${escHtml(t.text)}</span></div>`}else if(x.kind==='meeting'){const c=APPT_COLORS[MEETING_COLOR_INDEX];html+=`<div class="week-chip" onclick="event.stopPropagation();openMeetingModal('${x.originDk}',${x.index})" style="background:${c.bg};color:${c.text}" title="${escHtml(x.item.title)}"><i class="ti ti-notebook"></i><span>${escHtml(x.item.title)}</span></div>`}else{const id=x.item,c=DATE_COLORS[id.color??2];html+=`<div class="week-chip" onclick="event.stopPropagation();openImportantModal(${x.index})" style="background:${c.bg};color:${c.text}" title="${escHtml(id.title)}"><i class="ti ${id.icon||'ti-star'}"></i><span>${escHtml(id.title)}</span></div>`}});
+  if(items.length>4)html+=`<div class="week-chip week-more-chip">+${items.length-4} more</div>`;
+  return html+`</div>`;
+}
+function renderWeekly(area){
+  if(!area)return;
+  const dow=weekCursor.getDay(),weekStart=new Date(weekCursor);weekStart.setDate(weekCursor.getDate()-dow);const weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
+  el('week-label').textContent=`${MONTHS[weekStart.getMonth()].slice(0,3)} ${weekStart.getDate()} – ${MONTHS[weekEnd.getMonth()].slice(0,3)} ${weekEnd.getDate()}`;
+  const timedByDay=[];for(let i=0;i<7;i++){const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);timedByDay.push(getTimedWeeklyItems(d))}
+  let html=`<div class="week-wrap"><div class="week-grid"><div class="week-corner"></div>`;
+  for(let i=0;i<7;i++){const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);html+=`<div class="week-col-header${isSameDay(d,today)?' today-col':''}">${DAYS[i]}<span class="wday-num">${d.getDate()}</span></div>`}
+  html+=`<div class="week-all-day-label">All‑day<br><span>Items</span></div>`;
+  for(let i=0;i<7;i++){const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);html+=renderWeeklyAllDayCell(d)}
+  ALL_HOURS.forEach(hr=>{html+=`<div class="time-label">${fmtHour(hr)}</div>`;for(let i=0;i<7;i++){const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);const timed=timedByDay[i].filter(o=>(o.startHour??9)===hr);html+=`<div class="week-cell" onclick="selectDay(${d.getFullYear()},${d.getMonth()},${d.getDate()})">`;timed.forEach((o,idx)=>{const span=Math.max(1,(o.endHour??hr+1)-hr),h=Math.max(16,44*span-4-idx*4),c=o.color;html+=`<div class="week-event" onclick="event.stopPropagation();${timedWeeklyItemClick(o)}" style="background:${c.bg};color:${c.text};top:${2+idx*14}px;height:${h}px;z-index:${2+idx}" title="${escHtml(o.title)} · ${timeRangeLabel(o)}"><i class="ti ${o.icon}"></i>${escHtml(o.title).slice(0,10)}</div>`});html+=`</div>`}});
+  html+=`</div></div>`;area.innerHTML=html;
+}
+
+/* Override rows so optional times are visible wherever items appear. */
+function renderTaskRows(tasks){return tasks.map(o=>{const t=o.item,done=isTaskDone(t,o.occurrenceDk),dl=t.deadline?fmtDeadline(t.deadline):null,c=TASK_COLORS[t.color??0]||TASK_COLORS[0];return`<div class="item-row" onclick="openTaskModal('${o.originDk}',${o.index})"><div class="check${done?' done':''}" onclick="toggleTask('${o.originDk}',${o.index},'${o.occurrenceDk}',event)">${done?'<i class="ti ti-check" style="font-size:10px"></i>':''}</div><div class="task-color-dot" style="background:${c.bg};color:${c.text}"><i class="ti ti-tag"></i></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"><span class="item-main-text item-text${done?' done':''}">${escHtml(t.text)}</span><span class="badge badge-${t.priority||'medium'}">${PRIORITY_LABELS[t.priority||'medium']}</span><span class="cat-badge">${escHtml(t.category||'Work')}</span></div><div class="meta-line">${timedMetaBadge(t)}${o.carryLabel?`<span class="badge-recur"><i class="ti ${o.roundupGroup==='open'?'ti-history':'ti-calendar'}" style="font-size:9px"></i> ${escHtml(o.carryLabel)}</span>`:''}${dl?`<span class="deadline-text${dl.overdue?' overdue':''}">${dl.label}</span>`:''} ${(t.recurrence&&t.recurrence!=='none')?`<span class="badge-recur"><i class="ti ti-repeat" style="font-size:9px"></i> ${RECURRENCE_LABELS[t.recurrence]}</span>`:''}</div>${t.notes?`<div class="notes-line"><i class="ti ti-notes"></i> ${escHtml(t.notes)}</div>`:''}</div><button class="delete-btn" onclick="deleteTask('${o.originDk}',${o.index},event)"><i class="ti ti-x"></i></button></div>`}).join('')}
+function renderMeetingRows(meetings){return meetings.map(o=>{const m=o.item,c=APPT_COLORS[MEETING_COLOR_INDEX];return`<div class="item-row" onclick="openMeetingModal('${o.originDk}',${o.index})"><div class="appt-icon-dot" style="background:${c.bg};color:${c.text}"><i class="ti ti-notebook"></i></div><div style="flex:1;min-width:0"><div class="item-main-text">${escHtml(m.title)}</div><div class="appt-time">${fmtDate(parseKey(o.originDk))} ${timedMetaBadge(m)} <span class="cat-badge">${escHtml(m.category||'Work')}</span> <span class="badge-recur" style="background:${c.bg};color:${c.text};border-color:${c.dot}">Slate</span></div>${m.notes?`<div class="notes-line"><i class="ti ti-notes"></i> ${escHtml(m.notes)}</div>`:''}</div><button class="delete-btn" onclick="deleteMeeting('${o.originDk}',${o.index},event)"><i class="ti ti-x"></i></button></div>`}).join('')}
+function renderImportantRows(imps){return imps.map(o=>{const id=o.item,c=DATE_COLORS[id.color??2];return`<div class="item-row" onclick="openImportantModal(${o.index})"><div class="appt-icon-dot" style="background:${c.bg};color:${c.text}"><i class="ti ${id.icon||'ti-star'}"></i></div><div style="flex:1;min-width:0"><div class="item-main-text">${escHtml(id.title)}</div><div class="appt-time">${timedMetaBadge(id)} ${escHtml(id.category||'Other')} ${(id.recurrence&&id.recurrence!=='none')?`<span class="badge-recur"><i class="ti ti-repeat" style="font-size:9px"></i> ${RECURRENCE_LABELS[id.recurrence]}</span>`:''}</div></div><button class="delete-btn" onclick="deleteImportant(${o.index},event)"><i class="ti ti-x"></i></button></div>`}).join('')}
+function renderUpcomingImportantRows(items){return items.map(o=>{const id=o.item,c=DATE_COLORS[id.color??2];return`<div class="item-row" onclick="openImportantModal(${o.index})"><div class="appt-icon-dot" style="background:${c.bg};color:${c.text}"><i class="ti ${id.icon||'ti-star'}"></i></div><div style="flex:1;min-width:0"><div class="item-main-text">${escHtml(id.title)}</div><div class="appt-time">${fmtDate(o.nextDate)} ${timedMetaBadge(id)} · ${escHtml(id.category||'Other')}</div></div></div>`}).join('')}
+function renderAllImportantRows(items){return items.map(o=>{const id=o.item,c=DATE_COLORS[id.color??2],dt=dateFromInputValue(id.date);return`<div class="item-row" onclick="openImportantModal(${o.index})"><div class="appt-icon-dot" style="background:${c.bg};color:${c.text}"><i class="ti ${id.icon||'ti-star'}"></i></div><div style="flex:1;min-width:0"><div class="item-main-text">${escHtml(id.title)}</div><div class="appt-time">${dt?fmtDate(dt):''} ${timedMetaBadge(id)} · ${escHtml(id.category||'Other')} ${(id.recurrence&&id.recurrence!=='none')?`<span class="badge-recur"><i class="ti ti-repeat" style="font-size:9px"></i> ${RECURRENCE_LABELS[id.recurrence]}</span>`:''}</div></div><button class="delete-btn" onclick="deleteImportant(${o.index},event)"><i class="ti ti-x"></i></button></div>`}).join('')}
+
+/* Override modals to add optional time fields to new inclusions. */
+function openTaskModal(dk,index=null){
+  const isEdit=index!==null&&index!==undefined,item=isEdit?getDataByKey(dk).tasks[index]:null;_taskState={originDk:dk,index:isEdit?index:null,color:item?.color??0};
+  el('modal-root').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h3><i class="ti ti-checks"></i> ${isEdit?'Edit task':'New task'}</h3><div class="form-row"><label>Task</label><input id="tm-title" type="text" value="${escHtml(item?.text||'')}" placeholder="What needs to be done…"></div><div class="form-row"><label>Notes</label><textarea id="tm-notes" rows="3" placeholder="Add more details, links, context, or reminders…">${escHtml(item?.notes||'')}</textarea></div><div class="form-row-2"><div class="form-row" style="margin:0"><label>Task date</label><input id="tm-date" type="date" value="${inputDateFromKey(dk)}"></div><div class="form-row" style="margin:0"><label>Deadline</label><input id="tm-deadline" type="date" value="${escHtml(item?.deadline||'')}"></div></div><div class="form-row-2"><div class="form-row" style="margin:0"><label>Start time (optional)</label><select id="tm-start">${hoursOptionsOptional(item?.startHour,'No time')}</select></div><div class="form-row" style="margin:0"><label>End time (optional)</label><select id="tm-end">${hoursOptionsOptional(item?.endHour,'No time')}</select></div></div><div class="form-row-2"><div class="form-row" style="margin:0"><label>Priority</label><select id="tm-priority"><option value="high"${(item?.priority||'medium')==='high'?' selected':''}>High</option><option value="medium"${(item?.priority||'medium')==='medium'?' selected':''}>Medium</option><option value="low"${(item?.priority||'medium')==='low'?' selected':''}>Low</option></select></div><div class="form-row" style="margin:0"><label>Category</label><select id="tm-category">${categoryOptions(item?.category||'Work')}</select></div></div><div class="form-row"><label>Repeat</label><select id="tm-recurrence">${recurrenceOptions(item?.recurrence||'none')}</select></div><div class="form-row"><label>Colour</label><div class="color-picker" id="tm-colors">${colorSwatches(TASK_COLORS,_taskState.color,'setTaskColor')}</div></div><div class="modal-btns"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveTask()">Save</button></div></div></div>`;
+  el('tm-title').focus();attachModalDraftAutosave('task',isEdit);
+}
+function saveTask(){
+  const title=el('tm-title').value.trim();if(!title)return;
+  const[y,m,d]=el('tm-date').value.split('-').map(Number),targetDk=keyStr(y,m-1,d),tm=normaliseTimePair(el('tm-start').value,el('tm-end').value);
+  let old={done:false,doneDates:{}};if(_taskState.index!==null){old=getDataByKey(_taskState.originDk).tasks[_taskState.index]||old;getDataByKey(_taskState.originDk).tasks.splice(_taskState.index,1)}
+  getDataByKey(targetDk).tasks.push({text:title,notes:el('tm-notes').value.trim(),done:old.done??false,doneDates:old.doneDates||{},priority:el('tm-priority').value,deadline:el('tm-deadline').value||'',category:el('tm-category').value,recurrence:el('tm-recurrence').value,color:_taskState.color,startHour:tm.startHour,endHour:tm.endHour});
+  saveData();clearModalDraft();closeModal();render();
+}
+function openMeetingModal(dk,index=null){
+  const isEdit=index!==null&&index!==undefined,item=isEdit?getDataByKey(dk).meetings[index]:null;_meetingState={originDk:dk,index:isEdit?index:null};const c=APPT_COLORS[MEETING_COLOR_INDEX];
+  el('modal-root').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h3><i class="ti ti-notebook"></i> ${isEdit?'Edit meeting minutes':'New meeting minutes'}</h3><div class="form-row"><label>Title</label><input id="mm-title" type="text" value="${escHtml(item?.title||'')}" placeholder="Meeting title…"></div><div class="form-row-2"><div class="form-row" style="margin:0"><label>Date</label><input id="mm-date" type="date" value="${inputDateFromKey(dk)}"></div><div class="form-row" style="margin:0"><label>Category</label><select id="mm-category">${categoryOptions(item?.category||'Work')}</select></div></div><div class="form-row-2"><div class="form-row" style="margin:0"><label>Start time (optional)</label><select id="mm-start">${hoursOptionsOptional(item?.startHour,'No time')}</select></div><div class="form-row" style="margin:0"><label>End time (optional)</label><select id="mm-end">${hoursOptionsOptional(item?.endHour,'No time')}</select></div></div><div class="form-row"><label>Notes</label><textarea id="mm-notes" rows="6" placeholder="Add meeting summary, key decisions, action items, links, or follow-ups…">${escHtml(item?.notes||'')}</textarea></div><div class="form-row"><label>Colour</label><div class="color-choice selected" style="cursor:default"><span class="color-choice-dot" style="background:${c.dot}"></span><span class="color-choice-text"><span class="color-choice-name">Slate</span><span class="color-choice-code">${c.dot}</span></span></div></div><div class="modal-btns"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveMeeting()">Save</button></div></div></div>`;
+  el('mm-title').focus();attachModalDraftAutosave('meeting',isEdit);
+}
+function saveMeeting(){
+  const title=el('mm-title').value.trim();if(!title)return;
+  const[y,m,d]=el('mm-date').value.split('-').map(Number),targetDk=keyStr(y,m-1,d),tm=normaliseTimePair(el('mm-start').value,el('mm-end').value);
+  const existing=_meetingState.index!==null?getDataByKey(_meetingState.originDk).meetings[_meetingState.index]:null;
+  const meeting={title,notes:el('mm-notes').value.trim(),category:el('mm-category').value,color:MEETING_COLOR_INDEX,createdAt:existing?.createdAt||new Date().toISOString(),startHour:tm.startHour,endHour:tm.endHour};
+  if(_meetingState.index!==null)getDataByKey(_meetingState.originDk).meetings.splice(_meetingState.index,1);
+  getDataByKey(targetDk).meetings.push(meeting);saveData();clearModalDraft();closeModal();render();
+}
+function openImportantModal(index=null){
+  const isEdit=index!==null&&index!==undefined,item=isEdit?normaliseImportant(importantDates[index]):null;_impState={index:isEdit?index:null,color:item?.color??2,icon:item?.icon||'ti-star'};
+  el('modal-root').innerHTML=`<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><h3><i class="ti ti-star"></i> ${isEdit?'Edit important date':'New important date'}</h3><div class="form-row"><label>Title</label><input id="im-title" type="text" value="${escHtml(item?.title||'')}" placeholder="e.g. Mia's birthday…"></div><div class="form-row-2"><div class="form-row" style="margin:0"><label>Date</label><input id="im-date" type="date" value="${escHtml(item?.date||'')}"></div><div class="form-row" style="margin:0"><label>Category</label><select id="im-cat">${['Birthday','Anniversary','School event','Reminder','Holiday','Other'].map(c=>`<option value="${c}"${(item?.category||'Birthday')===c?' selected':''}>${c}</option>`).join('')}</select></div></div><div class="form-row-2"><div class="form-row" style="margin:0"><label>Start time (optional)</label><select id="im-start">${hoursOptionsOptional(item?.startHour,'No time')}</select></div><div class="form-row" style="margin:0"><label>End time (optional)</label><select id="im-end">${hoursOptionsOptional(item?.endHour,'No time')}</select></div></div><div class="form-row"><label>Repeat</label><select id="im-recurrence">${recurrenceOptions(item?.recurrence||'yearly')}</select></div><div class="form-row"><label>Colour</label><div class="color-picker" id="im-colors">${colorSwatches(DATE_COLORS,_impState.color,'setImpColor')}</div></div><div class="form-row"><label>Icon</label><div class="icon-picker" id="im-icons">${iconPickerHtml(ICONS_DATE,_impState.icon,'setImpIcon')}</div></div><div class="modal-btns"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-primary" onclick="saveImportant()">Save</button></div></div></div>`;
+  el('im-title').focus();attachModalDraftAutosave('important',isEdit);
+}
+function saveImportant(){
+  const title=el('im-title').value.trim(),date=el('im-date').value;if(!title||!date)return;
+  const tm=normaliseTimePair(el('im-start').value,el('im-end').value);
+  const item={title,date,category:el('im-cat').value,color:_impState.color,icon:_impState.icon,recurrence:el('im-recurrence').value,startHour:tm.startHour,endHour:tm.endHour};
+  if(_impState.index!==null)importantDates[_impState.index]=item;else importantDates.push(item);
+  saveImportantData();clearModalDraft();closeModal();render();
+}
+
 render();initSupabaseAuth();setInterval(renderGreeting,60000);
 </script>
 </body>
